@@ -14,6 +14,7 @@ namespace BlazorFabric
 
         [Parameter] public string ClassName { get; set; }
         [Parameter] public string Style { get; set; }
+        [Parameter(CaptureUnmatchedValues = true)] public IDictionary<string, object> UnknownParameters { get; set; }
 
         //ARIA Properties
         [Parameter] public string AriaAtomic { get; set; }

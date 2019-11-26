@@ -4,7 +4,6 @@ using Microsoft.JSInterop;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Threading;
 using System.Threading.Tasks;
 
 namespace BlazorFabric
@@ -34,11 +33,7 @@ namespace BlazorFabric
         [Parameter] public bool ValidateOnFocusOut { get; set; }
         [Parameter] public bool ValidateOnLoad { get; set; } = true;
         [Parameter] public int DeferredValidationTime { get; set; } = 200;
-        //[Parameter] public string AriaLabel { get; set; }
         [Parameter] public AutoComplete AutoComplete { get; set; } = AutoComplete.On;
-        //[Parameter] public string Mask { get; set; }
-        //[Parameter] public string MaskChar { get; set; }
-        //[Parameter] public string MaskFormat { get; set; }
         [Parameter] public string Placeholder { get; set; }
         [Parameter] public string IconName { get; set; }
 
@@ -143,9 +138,10 @@ namespace BlazorFabric
             await OnChange.InvokeAsync((string)args.Value);
         }
 
-        protected Task OnFocus(FocusEventArgs args)
+        protected virtual Task OnFocusHandler(FocusEventArgs args)
         {
             isFocused = true;
+            Console.WriteLine("TextField");
             if (ValidateOnFocusIn && !defaultErrorMessageIsSet)
             {
                 Validate(CurrentValue);
@@ -153,7 +149,7 @@ namespace BlazorFabric
             return Task.CompletedTask;
         }
 
-        protected Task OnBlur(FocusEventArgs args)
+        protected virtual Task OnBlurHandler(FocusEventArgs args)
         {
             isFocused = false;
             if (ValidateOnFocusOut && !defaultErrorMessageIsSet)
@@ -175,7 +171,7 @@ namespace BlazorFabric
 
         private async Task AdjustInputHeightAsync()
         {
-            if (this.AutoAdjustHeight == true && this.Multiline)
+            if (AutoAdjustHeight == true && Multiline)
             {
                 var scrollHeight = await JSRuntime.InvokeAsync<double>("BlazorFabricTextField.getScrollHeight", textAreaRef);
                 inlineTextAreaStyle = $"height: {scrollHeight}px";

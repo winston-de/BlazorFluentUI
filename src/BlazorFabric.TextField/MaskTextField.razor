@@ -1,0 +1,41 @@
+﻿@namespace BlazorFabric
+@inherits MaskTextFieldBase
+@using Microsoft.AspNetCore.Components.Web
+
+<TextField Required=@Required
+           Multiline=@Multiline
+           InputType=@InputType
+           Resizable=@Resizable
+           AutoAdjustHeight=@AutoAdjustHeight
+           Underlined=@Underlined
+           Borderless=@Borderless
+           Label=@Label
+           Description=@Description
+           Prefix=@Prefix
+           Suffix=@Suffix
+           DefaultValue=@DefaultValue
+           Value=@Value
+           Disabled=@Disabled
+           ReadOnly=@ReadOnly
+           ErrorMessage=@ErrorMessage
+           ValidateOnFocusIn=@ValidateOnFocusIn
+           ValidateOnFocusOut=@ValidateOnFocusOut
+           ValidateOnLoad=@ValidateOnLoad
+           DeferredValidationTime=@DeferredValidationTime
+           AutoComplete=@AutoComplete
+           Placeholder=@Placeholder
+           IconName=@IconName
+
+           @onfocus=@OnFocusHandler
+           @onblur=@OnBlurHandler
+           @onmousedown=@OnMouseDownHandler
+           @onmouseup=@OnMouseUpHandler
+           OnKeyDown=@OnKeyDownHandler
+           @onpaste=@OnPasteHandler
+           OnGetErrorMessage=@OnGetErrorMessageHandler
+           OnNotifyValidationResult=@OnNotifyValidationResultHandler
+           @attributes="@UnknownParameters">
+            <RenderLabel>
+                @RenderLabel
+            </RenderLabel>
+</TextField>
