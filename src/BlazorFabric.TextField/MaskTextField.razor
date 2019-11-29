@@ -14,7 +14,7 @@
            Prefix=@Prefix
            Suffix=@Suffix
            DefaultValue=@DefaultValue
-           Value=@Value
+           Value=@DisplayValue
            Disabled=@Disabled
            ReadOnly=@ReadOnly
            ErrorMessage=@ErrorMessage
@@ -34,8 +34,10 @@
            @onpaste=@OnPasteHandler
            OnGetErrorMessage=@OnGetErrorMessageHandler
            OnNotifyValidationResult=@OnNotifyValidationResultHandler
-           @attributes="@UnknownParameters">
+           @attributes="@UnknownParameters"
+           @ref="textFieldRef">
             <RenderLabel>
                 @RenderLabel
             </RenderLabel>
 </TextField>
+@*<TextField @ref=textMaskRef />*@

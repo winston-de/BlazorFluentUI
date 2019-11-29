@@ -29,7 +29,10 @@
     <TextField Label="With Error" ErrorMessage="there is an error" />
 </div>
 <div class="textFieldDiv">
-    <MaskTextField Label="With Input Mask" MaskChar="+" />
+    <MaskTextField Label="With Input Mask" MaskChar=@('+') Mask="m\ask: (999) 999 - 9999" />
+</div>
+<div class="textFieldDiv">
+    <MaskTextField Label="With Input Mask" Value="1235aa" Mask="m\ask: (999) 999 - 9999" />
 </div>
 <div class="textFieldDiv">
     <TextField Label="With Placeholder" Placeholder="placeholder text" />
