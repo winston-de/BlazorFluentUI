@@ -182,7 +182,8 @@ namespace BlazorFabricFocusZone {
                 // Assign initial tab indexes so that we can set initial focus as appropriate.
                 this._updateTabIndexes();
 
-                if (this._focusZoneProps.defaultActiveElement) {
+                // using a hack to detect whether the passed in HTMLElement is valid (came from a legitimate .NET ElementReference)
+                if ((<any>(this._focusZoneProps.defaultActiveElement)).__internalId !== null) {
                     this._activeElement = this._focusZoneProps.defaultActiveElement;
                     this.focus();
                 }
@@ -213,7 +214,8 @@ namespace BlazorFabricFocusZone {
             // Assign initial tab indexes so that we can set initial focus as appropriate.
             this._updateTabIndexes();
 
-            if (this._focusZoneProps.defaultActiveElement) {
+            // using a hack to detect whether the passed in HTMLElement is valid (came from a legitimate .NET ElementReference)
+            if ((<any>(this._focusZoneProps.defaultActiveElement)).__internalId !== null) {
                 this._activeElement = this._focusZoneProps.defaultActiveElement;
                 this.focus();
             }
@@ -436,7 +438,7 @@ namespace BlazorFabricFocusZone {
                 }
             }
 
-            this._dotNetRef.invokeMethodAsync("JSOnActiveElementChanged", this._activeElement);
+            this._dotNetRef.invokeMethodAsync("JSOnActiveElementChanged");
 
             if (doNotAllowFocusEventToPropagate) {
                 ev.stopPropagation();
@@ -534,7 +536,7 @@ namespace BlazorFabricFocusZone {
         public focusElement(element: HTMLElement): boolean {
             const { onBeforeFocusExists } = this._focusZoneProps;
 
-            if (onBeforeFocusExists && ! this._dotNetRef.invokeMethodAsync("JSOnBeforeFocus", element)) {
+            if (onBeforeFocusExists && ! this._dotNetRef.invokeMethodAsync("JSOnBeforeFocus")) {
                 return false;
             }
 
@@ -767,7 +769,7 @@ namespace BlazorFabricFocusZone {
                     isRangeSelected ||
                     (selectionStart! > 0 && !isForward) ||
                     (selectionStart !== inputValue.length && isForward) ||
-                    (!!this._focusZoneProps.handleTabKey && !(this._focusZoneProps.shouldInputLoseFocusOnArrowKeyExists && this._dotNetRef.invokeMethodAsync<boolean>("JSShouldInputLoseFocusOnArrowKey", element)))
+                    (!!this._focusZoneProps.handleTabKey && !(this._focusZoneProps.shouldInputLoseFocusOnArrowKeyExists && this._dotNetRef.invokeMethodAsync<boolean>("JSShouldInputLoseFocusOnArrowKey")))
                 ) {
                     return false;
                 }

@@ -219,7 +219,7 @@ var BlazorFabricFocusZone;
                         _this._updateTabIndexes();
                     }
                 }
-                _this._dotNetRef.invokeMethodAsync("JSOnActiveElementChanged", _this._activeElement);
+                _this._dotNetRef.invokeMethodAsync("JSOnActiveElementChanged");
                 if (doNotAllowFocusEventToPropagate) {
                     ev.stopPropagation();
                 }
@@ -289,7 +289,8 @@ var BlazorFabricFocusZone;
                 this._disposables.push(window.BlazorFabricBaseComponent.on(this._root, 'blur', this._onBlur, true));
                 // Assign initial tab indexes so that we can set initial focus as appropriate.
                 this._updateTabIndexes();
-                if (this._focusZoneProps.defaultActiveElement) {
+                // using a hack to detect whether the passed in HTMLElement is valid (came from a legitimate .NET ElementReference)
+                if ((this._focusZoneProps.defaultActiveElement).__internalId !== null) {
                     this._activeElement = this._focusZoneProps.defaultActiveElement;
                     this.focus();
                 }
@@ -314,7 +315,8 @@ var BlazorFabricFocusZone;
             this._disposables.push(window.BlazorFabricBaseComponent.on(this._root, 'blur', this._onBlur, true));
             // Assign initial tab indexes so that we can set initial focus as appropriate.
             this._updateTabIndexes();
-            if (this._focusZoneProps.defaultActiveElement) {
+            // using a hack to detect whether the passed in HTMLElement is valid (came from a legitimate .NET ElementReference)
+            if ((this._focusZoneProps.defaultActiveElement).__internalId !== null) {
                 this._activeElement = this._focusZoneProps.defaultActiveElement;
                 this.focus();
             }
@@ -387,7 +389,7 @@ var BlazorFabricFocusZone;
         };
         FocusZoneInternal.prototype.focusElement = function (element) {
             var onBeforeFocusExists = this._focusZoneProps.onBeforeFocusExists;
-            if (onBeforeFocusExists && !this._dotNetRef.invokeMethodAsync("JSOnBeforeFocus", element)) {
+            if (onBeforeFocusExists && !this._dotNetRef.invokeMethodAsync("JSOnBeforeFocus")) {
                 return false;
             }
             if (element) {
@@ -578,7 +580,7 @@ var BlazorFabricFocusZone;
                 if (isRangeSelected ||
                     (selectionStart > 0 && !isForward) ||
                     (selectionStart !== inputValue.length && isForward) ||
-                    (!!this._focusZoneProps.handleTabKey && !(this._focusZoneProps.shouldInputLoseFocusOnArrowKeyExists && this._dotNetRef.invokeMethodAsync("JSShouldInputLoseFocusOnArrowKey", element)))) {
+                    (!!this._focusZoneProps.handleTabKey && !(this._focusZoneProps.shouldInputLoseFocusOnArrowKeyExists && this._dotNetRef.invokeMethodAsync("JSShouldInputLoseFocusOnArrowKey")))) {
                     return false;
                 }
             }

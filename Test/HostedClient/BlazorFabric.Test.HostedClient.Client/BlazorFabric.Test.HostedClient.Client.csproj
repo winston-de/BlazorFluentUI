@@ -14,10 +14,12 @@
   <ItemGroup>
     <PackageReference Include="Microsoft.AspNetCore.Blazor" Version="3.0.0-preview9.19465.2" />
     <PackageReference Include="Microsoft.AspNetCore.Blazor.Build" Version="3.0.0-preview9.19465.2" PrivateAssets="all" />
+    <PackageReference Include="Toolbelt.Blazor.TimeZoneKit" Version="5.0.3" />
   </ItemGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\..\..\src\BlazorFabric.Button\BlazorFabric.Button.csproj" />
+    <ProjectReference Include="..\..\..\src\BlazorFabric.Calendar\BlazorFabric.Calendar.csproj" />
     <ProjectReference Include="..\..\..\src\BlazorFabric.Callout\BlazorFabric.Callout.csproj" />
     <ProjectReference Include="..\..\..\src\BlazorFabric.Checkbox\BlazorFabric.Checkbox.csproj" />
     <ProjectReference Include="..\..\..\src\BlazorFabric.CommandBar\BlazorFabric.CommandBar.csproj" />
