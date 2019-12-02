@@ -79,7 +79,7 @@ namespace BlazorFabric
             }
         }
 
-        protected ElementReference textAreaRef;
+        public ElementReference textAreaRef;
         protected string inlineTextAreaStyle = "";
         protected bool isFocused = false;
 
@@ -141,7 +141,7 @@ namespace BlazorFabric
         protected virtual Task OnFocusHandler(FocusEventArgs args)
         {
             isFocused = true;
-            Console.WriteLine("TextField");
+            Console.WriteLine("TextField"); 
             if (ValidateOnFocusIn && !defaultErrorMessageIsSet)
             {
                 Validate(CurrentValue);

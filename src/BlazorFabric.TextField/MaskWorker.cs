@@ -8,16 +8,24 @@ namespace BlazorFabric
 {
     public class MaskWorker
     {
-        private readonly Dictionary<char, string> _defaultMaskFormatChars;
+        private IDictionary<char, Regex> maskFormatChars;
         private readonly char _defaultMaskChar;
-        public MaskWorker()
+        public MaskWorker(IDictionary<char, Regex> maskFormat)
         {
-            _defaultMaskFormatChars = new Dictionary<char, string>()
+            if (maskFormat != null)
             {
-                { '9',"[0-9]" },
-                { 'a',"[a-zA-Z]" },
-                { '*',"[a-zA-Z0-9]" }
-            };
+                maskFormatChars = maskFormat;
+            }
+            else
+            {
+                maskFormatChars = new Dictionary<char, Regex>()
+                {
+                    { '9',new Regex("[0-9]") },
+                    { 'a',new Regex("[a-zA-Z]") },
+                    { '*',new Regex("[a-zA-Z0-9]") }
+                };
+            }
+
             _defaultMaskChar = '_';
         }
 
@@ -38,13 +46,13 @@ namespace BlazorFabric
                 }
                 else
                 {
-                    string maskFormat;
-                    if (_defaultMaskFormatChars.TryGetValue(character, out maskFormat))
+                    Regex maskFormat;
+                    if (maskFormatChars.TryGetValue(character, out maskFormat))
                     {
                         MaskCharData.Add(new MaskValue()
                         {
                             DisplayIndex = i,
-                            Format = new Regex(maskFormat)
+                            Format = maskFormat
                         });
                     }
                 }
@@ -74,6 +82,47 @@ namespace BlazorFabric
             }
 
             return maskDisplay;
+        }
+
+        public int InsertString(ICollection<MaskValue> maskCharData, int selectionStart, string newValue)
+        {
+            int stringIndex = 0;
+            int nextIndex = 0;
+            bool isStringInserted = false;
+
+            // Iterate through _maskCharData finding values with a displayIndex after the specified range start
+            for (int i = 0; i < maskCharData.Count && stringIndex < newValue.Length; i++)
+            {
+                if (maskCharData.ToArray()[i].DisplayIndex >= selectionStart)
+                {
+                    isStringInserted = true;
+                    nextIndex = maskCharData.ToArray()[i].DisplayIndex;
+                    // Find the next character in the newString that matches the format
+                    while (stringIndex < newValue.Length)
+                    {
+                        // If the character matches the format regexp, set the maskCharData to the new character
+                        if (maskCharData.ToArray()[i].Format.IsMatch(newValue[stringIndex].ToString()))
+                        {
+                            Console.WriteLine($"Add Value {newValue[stringIndex]} to maskCharData");
+                            maskCharData.ToArray()[i].Value = newValue[stringIndex];
+                            stringIndex++;
+                            // Set the nextIndex to the display index of the next mask format character.
+                            if (i + 1 < maskCharData.Count)
+                            {
+                                nextIndex = maskCharData.ToArray()[i + 1].DisplayIndex;
+                            }
+                            else
+                            {
+                                nextIndex++;
+                            }
+                            break;
+                        }
+                        stringIndex++;
+                    }
+                }
+            }
+
+            return isStringInserted ? nextIndex : selectionStart;
         }
     }
 }

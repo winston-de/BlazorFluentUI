@@ -8,7 +8,7 @@
     <div class="ms-TextField-wrapper">
         @if (this.Label != null)
         {
-            <BlazorFabric.Label Required=@this.Required HtmlFor=@this.id Disabled=@this.Disabled>@(this.Label + (this.Underlined ? ":" : ""))</BlazorFabric.Label>
+            <Label Required=@this.Required HtmlFor=@this.id Disabled=@this.Disabled>@(this.Label + (this.Underlined ? ":" : ""))</Label>
         }
         <div class="ms-TextField-fieldGroup">
             @if (this.Prefix != null)
@@ -26,7 +26,7 @@
                           @oninput=@InputHandler
                           @onchange=@ChangeHandler
                           class="mediumFont ms-TextField-field"
-                          aria-label=@this.AriaLabel
+                          aria-label=@AriaLabel
                           aria-describedby=@this.descriptionId
                           aria-invalid=@(!string.IsNullOrWhiteSpace(this.ErrorMessage) ? true : false)
                           readOnly=@this.ReadOnly
@@ -44,11 +44,12 @@
             {
                 <input type="@TypeUtils.InputMap[this.InputType]"
                        id=@this.id
+                       @ref="textAreaRef"
                        @bind-value=@CurrentValue
                        @oninput=@InputHandler
                        autocomplete=@GetAutoCompleteString()
                        class="mediumFont ms-TextField-field"
-                       aria-label=@this.AriaLabel
+                       aria-label=@AriaLabel
                        aria-describedby=@this.descriptionId
                        aria-invalid=@(!string.IsNullOrWhiteSpace(this.ErrorMessage) ? true : false)
                        readOnly=@this.ReadOnly
