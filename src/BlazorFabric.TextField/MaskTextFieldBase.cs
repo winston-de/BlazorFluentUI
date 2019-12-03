@@ -9,10 +9,62 @@ using System.Text.RegularExpressions;
 
 namespace BlazorFabric
 {
-    public class MaskTextFieldBase : TextFieldBase
+    public class MaskTextFieldBase : FabricComponentBase
     {
 
         [Inject] private IJSRuntime JSRuntime { get; set; }
+
+        #region TextFieldParam
+        [Parameter] public bool Required { get; set; }
+        [Parameter] public bool Multiline { get; set; }
+        [Parameter] public InputType InputType { get; set; } = InputType.Text;
+        [Parameter] public bool Resizable { get; set; } = true;
+        [Parameter] public bool AutoAdjustHeight { get; set; }
+        [Parameter] public bool Underlined { get; set; }
+        [Parameter] public bool Borderless { get; set; }
+        [Parameter] public string Label { get; set; }
+        [Parameter] public RenderFragment RenderLabel { get; set; }
+        [Parameter] public string Description { get; set; }
+        [Parameter] public string Prefix { get; set; }
+        [Parameter] public string Suffix { get; set; }
+        [Parameter] public string DefaultValue { get; set; }
+        [Parameter] public string Value { get; set; }
+        [Parameter] public bool Disabled { get; set; }
+        [Parameter] public bool ReadOnly { get; set; }
+        [Parameter] public string ErrorMessage { get; set; }
+        [Parameter] public bool ValidateOnFocusIn { get; set; }
+        [Parameter] public bool ValidateOnFocusOut { get; set; }
+        [Parameter] public bool ValidateOnLoad { get; set; } = true;
+        [Parameter] public int DeferredValidationTime { get; set; } = 200;
+        [Parameter] public AutoComplete AutoComplete { get; set; } = AutoComplete.On;
+        [Parameter] public string Placeholder { get; set; }
+        [Parameter] public string IconName { get; set; }
+
+        [Parameter]
+        public EventCallback<KeyboardEventArgs> OnKeyDown { get; set; }
+        [Parameter]
+        public EventCallback<KeyboardEventArgs> OnKeyUp { get; set; }
+        [Parameter]
+        public EventCallback<KeyboardEventArgs> OnKeyPress { get; set; }
+        [Parameter]
+        public Func<string, string> OnGetErrorMessage { get; set; }
+        [Parameter]
+        public Action<string, string> OnNotifyValidationResult { get; set; }
+
+        [Parameter]
+        public EventCallback<MouseEventArgs> OnClick { get; set; }  // expose click event for Combobox and pickers
+        [Parameter]
+        public EventCallback<FocusEventArgs> OnBlur { get; set; }
+        [Parameter]
+        public EventCallback<FocusEventArgs> OnFocus { get; set; }
+
+        [Parameter]
+        public EventCallback<string> OnChange { get; set; }
+        [Parameter]
+        public EventCallback<string> OnInput { get; set; }
+
+        #endregion
+
 
         [Parameter] public string Mask { get; set; }
         [Parameter] public char? MaskChar { get; set; }
@@ -23,15 +75,28 @@ namespace BlazorFabric
         private ICollection<MaskValue> maskCharData;
         private ChangeSelectionData changeSelectionData;
         private bool moveCursorOnMouseUp;
-        protected TextFieldBase textFieldRef;
+        private bool isFocused;
+        protected TextField textFieldComponent;
+
 
         protected string DisplayValue { get; set; }
 
 
-        protected override Task OnInitializedAsync()
+        protected override void OnInitialized()
         {
             maskWorker = new MaskWorker(MaskFormat);
             selection = new Selection();
+            if (OnGetErrorMessage != null)
+            {
+                if (UnknownParameters == null)
+                    UnknownParameters = new Dictionary<string, object>();
+                UnknownParameters.Add("OnGetErrorMessage", OnGetErrorMessage);
+            }
+
+            if (OnNotifyValidationResult != null)
+            {
+                UnknownParameters.Add("OnNotifyValidationResult", OnNotifyValidationResult);
+            }
 
             maskCharData = maskWorker.ParseMask(Mask);
             if (!string.IsNullOrWhiteSpace(Value))
@@ -40,31 +105,24 @@ namespace BlazorFabric
                 Value = null;
             }
             DisplayValue = maskWorker.GetMaskDisplay(Mask, maskCharData, MaskChar);
-            return base.OnInitializedAsync();
+            base.OnInitialized();
         }
 
-        protected override Task OnParametersSetAsync()
+        protected override void OnParametersSet()
         {
-            Console.WriteLine("OnParametersSetAsync is called");
-            return base.OnParametersSetAsync();
+            Console.WriteLine("OnParametersSet is called");
+            base.OnParametersSet();
         }
 
         protected override async Task OnAfterRenderAsync(bool firstRender)
         {
-            await base.OnAfterRenderAsync(firstRender);
-            Console.WriteLine("OnAfterRenderAsync MaskTextField is called");
+            base.OnAfterRender(firstRender);
+            Console.WriteLine("OnAfterRender MaskTextField is called");
             if (selection != null && selection.SetSelection)
             {
                 selection.SetSelection = false;
                 await SetSelectionRange(selection.SelectionStart, selection.SelectionEnd);
-                StateHasChanged();
             }
-        }
-
-        protected override bool ShouldRender()
-        {
-            Console.WriteLine("ShouldRender is called");
-            return base.ShouldRender();
         }
 
         protected string OnGetErrorMessageHandler(string value)
@@ -77,7 +135,7 @@ namespace BlazorFabric
             OnNotifyValidationResult?.Invoke(errorMessage, value);
         }
 
-        protected async void OnInputChange(string value)
+        protected async void OnTextFieldInput(string value)
         {
             Console.WriteLine("OnInput MaskTextField");
 
@@ -100,7 +158,30 @@ namespace BlazorFabric
             }
             else if (changeSelectionData.ChangeType == InputChangeType.Delete || changeSelectionData.ChangeType == InputChangeType.BackSpace)
             {
-                Console.WriteLine("Deleted");
+                Console.WriteLine("Delete");
+                var isDel = changeSelectionData.ChangeType == InputChangeType.Delete;
+                var charCount = changeSelectionData.SelectionEnd - changeSelectionData.SelectionStart;
+
+                if (charCount > 0)
+                {
+                    // charCount is > 0 if range was deleted
+                    maskCharData = maskWorker.ClearRange(maskCharData, changeSelectionData.SelectionStart, charCount);
+                    cursorPos = maskWorker.GetRightFormatIndex(maskCharData, changeSelectionData.SelectionStart);
+                }
+                else
+                {
+                    // If charCount === 0, there was no selection and a single character was deleted
+                    if (isDel)
+                    {
+                        maskCharData = maskWorker.ClearNext(maskCharData, changeSelectionData.SelectionStart);
+                        cursorPos = maskWorker.GetRightFormatIndex(maskCharData, changeSelectionData.SelectionStart);
+                    }
+                    else
+                    {
+                        maskCharData = maskWorker.ClearPrev(maskCharData, changeSelectionData.SelectionStart);
+                        cursorPos = maskWorker.GetLeftFormatIndex(maskCharData, changeSelectionData.SelectionStart);
+                    }
+                }
             }
             else if (value.Length > DisplayValue.Length)
             {
@@ -117,6 +198,15 @@ namespace BlazorFabric
             else if (value.Length <= DisplayValue.Length)
             {
                 Console.WriteLine("value.Length <= DisplayValue.Length");
+                int charCount = 1;
+                int selectCount = DisplayValue.Length + charCount - value.Length;
+                int startPos = changeSelectionData.SelectionEnd - charCount;
+                string enteredString = value.Substring(startPos, charCount);
+
+                // Clear the selected range
+                maskCharData = maskWorker.ClearRange(maskCharData, startPos, selectCount);
+                // Insert the printed character
+                cursorPos = maskWorker.InsertString(maskCharData, startPos, enteredString);
             }
             else
             {
@@ -125,28 +215,36 @@ namespace BlazorFabric
             }
 
             changeSelectionData = null;
+            DisplayValue = "";// maskWorker.GetMaskDisplay(Mask, maskCharData, MaskChar);
+            await InvokeAsync(() => StateHasChanged());
             DisplayValue = maskWorker.GetMaskDisplay(Mask, maskCharData, MaskChar);
             selection.SetSelection = true;
             selection.SelectionStart = cursorPos;
             selection.SelectionEnd = cursorPos;
+
+            await InvokeAsync(() => StateHasChanged());
+
         }
 
-        protected override async Task OnFocusHandler(FocusEventArgs args)
+        protected Task OnTextFieldFocus(FocusEventArgs args)
         {
             Console.WriteLine("OnFocus MaskTextField");
             isFocused = true;
             SetFirstUnfilledMaskPosition();
-            //await base.OnFocusHandler(args);
-            return;// Task.CompletedTask;
+            return Task.CompletedTask;
+
         }
-        protected override Task OnBlurHandler(FocusEventArgs args)
+
+        protected Task OnTextFieldBlur(FocusEventArgs args)
         {
             Console.WriteLine("OnBlur MaskTextField");
             isFocused = false;
             moveCursorOnMouseUp = true;
             return Task.CompletedTask;
+
         }
-        protected Task OnMouseDownHandler(MouseEventArgs args)
+
+        protected Task OnTextFieldMouseDown(MouseEventArgs args)
         {
             Console.WriteLine("OnMouseDown MaskTextField");
             if (!isFocused)
@@ -155,7 +253,8 @@ namespace BlazorFabric
             }
             return Task.CompletedTask;
         }
-        protected Task OnMouseUpHandler(MouseEventArgs args)
+
+        protected Task OnTextFieldMouseUp(MouseEventArgs args)
         {
             Console.WriteLine("OnMouseUp MaskTextField");
             if (moveCursorOnMouseUp)
@@ -165,16 +264,37 @@ namespace BlazorFabric
             }
             return Task.CompletedTask;
         }
-        protected Task OnKeyDownHandler(KeyboardEventArgs args)
+
+        protected async Task OnTextFieldKeyDown(KeyboardEventArgs args)
         {
             Console.WriteLine("OnKeyDown MaskTextField");
-            return Task.CompletedTask;
+            if (args.CtrlKey || args.MetaKey)
+                return;
+
+            if (args.Key == "Backspace" || args.Key == "Delete")
+            {
+                var selectionStart = await GetSelectionStart();
+                var selectionEnd = await GetSelectionEnd();
+                if (!(args.Key == "Backspace" && selectionEnd > 0) && !(args.Key == "Delete" && selectionStart < DisplayValue.Length))
+                    return;
+
+                changeSelectionData = new ChangeSelectionData()
+                {
+                    ChangeType = args.Key == "Backspace" ? InputChangeType.BackSpace : InputChangeType.Delete,
+                    SelectionStart = selectionStart,
+                    SelectionEnd = selectionEnd
+                };
+            }
+
+            //return Task.CompletedTask;
         }
-        protected Task OnPasteHandler(ClipboardEventArgs args)
+
+        protected Task OnTextFieldPaste(ClipboardEventArgs args)
         {
             Console.WriteLine("OnPaste MaskTextField");
             return Task.CompletedTask;
         }
+
         private void SetValue(string newValue)
         {
             int valueIndex = 0, charDataIndex = 0;
@@ -189,22 +309,6 @@ namespace BlazorFabric
                 valueIndex++;
             }
         }
-        
-        private async Task<int> GetSelectionStart()
-        {
-            return await JSRuntime.InvokeAsync<int>("BlazorFabricMaskTextField.getSelectionStart", textFieldRef.textAreaRef);
-        }
-
-        private async Task<int> GetSelectionEnd()
-        {
-            return await JSRuntime.InvokeAsync<int>("BlazorFabricMaskTextField.getSelectionEnd", textFieldRef.textAreaRef);
-        }
-
-        private async Task SetSelectionRange(int start, int end)
-        {
-            await JSRuntime.InvokeVoidAsync("BlazorFabricMaskTextField.setSelectionRange", textFieldRef.textAreaRef, start, end);
-        }
-
 
         // Move the cursor position to the leftmost unfilled position
         private void SetFirstUnfilledMaskPosition()
@@ -222,6 +326,22 @@ namespace BlazorFabric
             }
         }
 
+        #region JsFunctions
+        private async Task<int> GetSelectionStart()
+        {
+            return await JSRuntime.InvokeAsync<int>("BlazorFabricMaskTextField.getSelectionStart", textFieldComponent.textAreaRef);
+        }
+
+        private async Task<int> GetSelectionEnd()
+        {
+            return await JSRuntime.InvokeAsync<int>("BlazorFabricMaskTextField.getSelectionEnd", textFieldComponent.textAreaRef);
+        }
+
+        private async Task SetSelectionRange(int start, int end)
+        {
+            await JSRuntime.InvokeVoidAsync("BlazorFabricMaskTextField.setSelectionRange", textFieldComponent.textAreaRef, start, end);
+        }
+        #endregion
 
     }
 }

@@ -83,6 +83,71 @@ namespace BlazorFabric
 
             return maskDisplay;
         }
+        public int GetRightFormatIndex(ICollection<MaskValue> maskCharData, int index)
+        {
+            for (int i = 0; i < maskCharData.Count; i++)
+            {
+                if (maskCharData.ToArray()[i].DisplayIndex >= index)
+                {
+                    return maskCharData.ToArray()[i].DisplayIndex;
+                }
+            }
+            return maskCharData.ToArray()[maskCharData.Count - 1].DisplayIndex;
+        }
+
+        public int GetLeftFormatIndex(ICollection<MaskValue> maskCharData, int index)
+        {
+            for (int i = maskCharData.Count - 1; i >= 0; i--)
+            {
+                if (maskCharData.ToArray()[i].DisplayIndex < index)
+                {
+                    return maskCharData.ToArray()[i].DisplayIndex;
+                }
+            }
+            return maskCharData.ToArray()[0].DisplayIndex;
+        }
+
+        public ICollection<MaskValue> ClearRange(ICollection<MaskValue> maskCharData, int selectionStart, int selectionCount)
+        {
+            for (int i = 0; i < maskCharData.Count; i++)
+            {
+                if (maskCharData.ToArray()[i].DisplayIndex >= selectionStart)
+                {
+                    if (maskCharData.ToArray()[i].DisplayIndex >= selectionStart + selectionCount)
+                    {
+                        break;
+                    }
+                    maskCharData.ToArray()[i].Value = null;
+                }
+            }
+            return maskCharData;
+        }
+
+        public ICollection<MaskValue> ClearNext(ICollection<MaskValue> maskCharData, int selectionStart)
+        {
+            for (int i = 0; i < maskCharData.Count; i++)
+            {
+                if (maskCharData.ToArray()[i].DisplayIndex >= selectionStart)
+                {
+                    maskCharData.ToArray()[i].Value = null;
+                    break;
+                }
+            }
+            return maskCharData;
+        }
+
+        public ICollection<MaskValue> ClearPrev(ICollection<MaskValue> maskCharData, int selectionStart)
+        {
+            for (int i = maskCharData.Count - 1; i >= 0; i--)
+            {
+                if (maskCharData.ToArray()[i].DisplayIndex < selectionStart)
+                {
+                    maskCharData.ToArray()[i].Value = null;
+                    break;
+                }
+            }
+            return maskCharData;
+        }
 
         public int InsertString(ICollection<MaskValue> maskCharData, int selectionStart, string newValue)
         {

@@ -24,8 +24,8 @@
                           @ref="textAreaRef"
                           style=@inlineTextAreaStyle
                           value=@CurrentValue
-                          @oninput=@InputHandler
-                          @onchange=@ChangeHandler
+                          @oninput=@OnInputIntern
+                          @onchange=@OnChangeIntern
                           class="mediumFont ms-TextField-field"
                           aria-label=@AriaLabel
                           aria-describedby=@this.descriptionId
@@ -37,8 +37,11 @@
                           @onkeydown=@OnKeyDown
                           @onkeyup=@OnKeyUp
                           @onkeypress=@OnKeyPress
-                          @onfocus=@OnFocusHandler
-                          @onblur=@OnBlurHandler
+                          @onmousedown=@OnMouseDown
+                          @onmouseup=@OnMouseUp
+                          @onpaste=@OnPaste
+                          @onfocus=@OnFocusInternal
+                          @onblur=@OnBlurInternal
                           @attributes=@UnknownParameters />
             }
             else
@@ -47,7 +50,7 @@
                        id=@this.id
                        @ref="textAreaRef"
                        @bind-value=@CurrentValue
-                       @oninput=@InputHandler
+                       @oninput=@OnInputIntern
                        autocomplete=@GetAutoCompleteString()
                        class="mediumFont ms-TextField-field"
                        aria-label=@AriaLabel
@@ -59,8 +62,11 @@
                        @onkeydown=@OnKeyDown
                        @onkeyup=@OnKeyUp
                        @onkeypress=@OnKeyPress
-                       @onfocus=@OnFocusHandler
-                       @onblur=@OnBlurHandler
+                       @onmousedown=@OnMouseDown
+                       @onmouseup=@OnMouseUp
+                       @onpaste=@OnPaste
+                       @onfocus=@OnFocusInternal
+                       @onblur=@OnBlurInternal
                        @attributes=@UnknownParameters />
             }
             @if (!string.IsNullOrWhiteSpace(IconName))

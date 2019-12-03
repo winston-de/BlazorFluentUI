@@ -36,7 +36,13 @@ namespace BlazorFabric
         [Parameter] public AutoComplete AutoComplete { get; set; } = AutoComplete.On;
         [Parameter] public string Placeholder { get; set; }
         [Parameter] public string IconName { get; set; }
+        
+        [Parameter]
+        public Func<string, string> OnGetErrorMessage { get; set; }
+        [Parameter]
+        public Action<string, string> OnNotifyValidationResult { get; set; }
 
+        // Events
         [Parameter]
         public EventCallback<KeyboardEventArgs> OnKeyDown { get; set; }
         [Parameter]
@@ -44,28 +50,29 @@ namespace BlazorFabric
         [Parameter]
         public EventCallback<KeyboardEventArgs> OnKeyPress { get; set; }
         [Parameter]
-        public Func<string, string> OnGetErrorMessage { get; set; }
+        public EventCallback<MouseEventArgs> OnMouseDown { get; set; }
         [Parameter]
-        public Action<string, string> OnNotifyValidationResult { get; set; }
-
+        public EventCallback<MouseEventArgs> OnMouseUp { get; set; }
+        [Parameter]
+        public EventCallback<ClipboardEventArgs> OnPaste { get; set; }
         [Parameter]
         public EventCallback<MouseEventArgs> OnClick { get; set; }  // expose click event for Combobox and pickers
         [Parameter]
         public EventCallback<FocusEventArgs> OnBlur { get; set; }
         [Parameter]
         public EventCallback<FocusEventArgs> OnFocus { get; set; }
-
-        //[Parameter]
-        //protected Func<UIChangeEventArgs, Task> OnChange { get; set; }
-        //[Parameter]
-        //protected Func<UIChangeEventArgs, Task> OnInput { get; set; }
         [Parameter]
         public EventCallback<string> OnChange { get; set; }
         [Parameter]
         public EventCallback<string> OnInput { get; set; }
 
+        
+        public ElementReference textAreaRef;
+
         protected string id = Guid.NewGuid().ToString();
         protected string descriptionId = Guid.NewGuid().ToString();
+        protected string inlineTextAreaStyle = "";
+        protected bool isFocused = false;
 
         private bool firstRendered = false;
         private int deferredValidationTime;
@@ -82,13 +89,10 @@ namespace BlazorFabric
                 if (value == currentValue)
                     return;
                 currentValue = value;
-                ChangeHandler(new ChangeEventArgs() { Value = value }).ConfigureAwait(true);
+                OnChangeIntern(new ChangeEventArgs() { Value = value }).ConfigureAwait(true);
             }
         }
 
-        public ElementReference textAreaRef;
-        protected string inlineTextAreaStyle = "";
-        protected bool isFocused = false;
 
         protected override Task OnInitializedAsync()
         {
@@ -120,29 +124,30 @@ namespace BlazorFabric
             return base.OnParametersSetAsync();
         }
 
-        protected async Task InputHandler(ChangeEventArgs args)
+        protected async Task OnInputIntern(ChangeEventArgs args)
         {
+
             if (!defaultErrorMessageIsSet && OnGetErrorMessage != null && !string.IsNullOrWhiteSpace(ErrorMessage))
             {
                 ErrorMessage = "";
-                StateHasChanged();
+                await InvokeAsync(() => StateHasChanged());
             }
             if (ValidateAllChanges())
             {
                 await DeferredValidation((string)args.Value).ConfigureAwait(false);
             }
+
             await AdjustInputHeightAsync();
-            await OnInput.InvokeAsync((string)args.Value);
-            //await InputChanged.InvokeAsync((string)args.Value);
-            //if (this.OnInput != null)
-            //{
-            //    await this.OnInput.Invoke(args);
-            //}
+
+            if (OnInput.HasDelegate)
+                await OnInput.InvokeAsync((string)args.Value);
+
         }
 
-        protected async Task ChangeHandler(ChangeEventArgs args)
+        protected async Task OnChangeIntern(ChangeEventArgs args)
         {
-            await OnChange.InvokeAsync((string)args.Value);
+            if(OnChange.HasDelegate)
+                await OnChange.InvokeAsync((string)args.Value);
         }
 
         protected async Task OnFocusInternal(FocusEventArgs args)
@@ -151,7 +156,7 @@ namespace BlazorFabric
                 await OnFocus.InvokeAsync(args);
 
             isFocused = true;
-            Console.WriteLine("TextField"); 
+            Console.WriteLine("OnFocus TextField"); 
             if (ValidateOnFocusIn && !defaultErrorMessageIsSet)
             {
                 Validate(CurrentValue);
@@ -164,6 +169,7 @@ namespace BlazorFabric
             if (OnBlur.HasDelegate)
                 await OnBlur.InvokeAsync(args);
 
+            Console.WriteLine("OnFocus TextField"); 
             isFocused = false;
             if (ValidateOnFocusOut && !defaultErrorMessageIsSet)
             {
@@ -182,15 +188,6 @@ namespace BlazorFabric
             await base.OnAfterRenderAsync(firstRender);
         }
 
-        private async Task AdjustInputHeightAsync()
-        {
-            if (AutoAdjustHeight == true && Multiline)
-            {
-                var scrollHeight = await JSRuntime.InvokeAsync<double>("BlazorFabricTextField.getScrollHeight", textAreaRef);
-                inlineTextAreaStyle = $"height: {scrollHeight}px";
-            }
-        }
-
         protected string GetAutoCompleteString()
         {
             var value = AutoComplete.ToString();
@@ -207,6 +204,15 @@ namespace BlazorFabric
                     result += c;
             }
             return result;
+        }
+
+        private async Task AdjustInputHeightAsync()
+        {
+            if (AutoAdjustHeight == true && Multiline)
+            {
+                var scrollHeight = await JSRuntime.InvokeAsync<double>("BlazorFabricTextField.getScrollHeight", textAreaRef);
+                inlineTextAreaStyle = $"height: {scrollHeight}px";
+            }
         }
 
         private void Validate(string value)

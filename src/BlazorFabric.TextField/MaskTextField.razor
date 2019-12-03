@@ -26,17 +26,15 @@
            Placeholder=@Placeholder
            IconName=@IconName
 
-           OnInput=OnInputChange
-           @onfocus=@OnFocusHandler
-           @onblur=@OnBlurHandler
-           @onmousedown=@OnMouseDownHandler
-           @onmouseup=@OnMouseUpHandler
-           OnKeyDown=@OnKeyDownHandler
-           @onpaste=@OnPasteHandler
-           OnGetErrorMessage=@OnGetErrorMessageHandler
-           OnNotifyValidationResult=@OnNotifyValidationResultHandler
+           OnInput=OnTextFieldInput
+           OnFocus=OnTextFieldFocus
+           OnBlur=OnTextFieldBlur
+           OnKeyDown=OnTextFieldKeyDown
+           OnMouseDown=OnTextFieldMouseDown
+           OnMouseUp=OnTextFieldMouseUp
+           OnPaste=OnTextFieldPaste
            @attributes="@UnknownParameters"
-           @ref="textFieldRef">
+           @ref="textFieldComponent">
             <RenderLabel>
                 @RenderLabel
             </RenderLabel>
