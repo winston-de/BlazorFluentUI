@@ -9,7 +9,7 @@ using System.Text.RegularExpressions;
 
 namespace BlazorFabric
 {
-    public class MaskTextFieldBase : FabricComponentBase
+    public partial class MaskTextField : FabricComponentBase
     {
 
         [Inject] private IJSRuntime JSRuntime { get; set; }
@@ -125,20 +125,10 @@ namespace BlazorFabric
             }
         }
 
-        protected string OnGetErrorMessageHandler(string value)
-        {
-            return OnGetErrorMessage?.Invoke(value);
-        }
-
-        protected void OnNotifyValidationResultHandler(string errorMessage, string value)
-        {
-            OnNotifyValidationResult?.Invoke(errorMessage, value);
-        }
-
         protected async void OnTextFieldInput(string value)
         {
             Console.WriteLine("OnInput MaskTextField");
-
+            
             if (changeSelectionData == null)
             {
                 changeSelectionData = new ChangeSelectionData()
@@ -155,6 +145,17 @@ namespace BlazorFabric
             if (changeSelectionData.ChangeType == InputChangeType.TextPasted)
             {
                 Console.WriteLine("Pasted");
+                int charsSelected = changeSelectionData.SelectionEnd - changeSelectionData.SelectionStart;
+                int charCount = value.Length + charsSelected - DisplayValue.Length;
+                int startPos = changeSelectionData.SelectionStart;
+                string pastedString = value.Substring(startPos, charCount);
+
+                // Clear any selected characters
+                if (charsSelected > 0)
+                {
+                    maskCharData = maskWorker.ClearRange(maskCharData, changeSelectionData.SelectionStart, charsSelected);
+                }
+                cursorPos = maskWorker.InsertString(maskCharData, startPos, pastedString);
             }
             else if (changeSelectionData.ChangeType == InputChangeType.Delete || changeSelectionData.ChangeType == InputChangeType.BackSpace)
             {
@@ -244,17 +245,17 @@ namespace BlazorFabric
 
         }
 
-        protected Task OnTextFieldMouseDown(MouseEventArgs args)
+        protected async Task OnTextFieldMouseDown(MouseEventArgs args)
         {
             Console.WriteLine("OnMouseDown MaskTextField");
             if (!isFocused)
             {
                 moveCursorOnMouseUp = true;
             }
-            return Task.CompletedTask;
+            //return Task.CompletedTask;
         }
 
-        protected Task OnTextFieldMouseUp(MouseEventArgs args)
+        protected async Task OnTextFieldMouseUp(MouseEventArgs args)
         {
             Console.WriteLine("OnMouseUp MaskTextField");
             if (moveCursorOnMouseUp)
@@ -262,12 +263,14 @@ namespace BlazorFabric
                 moveCursorOnMouseUp = false;
                 SetFirstUnfilledMaskPosition();
             }
-            return Task.CompletedTask;
+            //return Task.CompletedTask;
         }
 
         protected async Task OnTextFieldKeyDown(KeyboardEventArgs args)
         {
             Console.WriteLine("OnKeyDown MaskTextField");
+
+            changeSelectionData = null;
             if (args.CtrlKey || args.MetaKey)
                 return;
 
@@ -285,14 +288,20 @@ namespace BlazorFabric
                     SelectionEnd = selectionEnd
                 };
             }
-
-            //return Task.CompletedTask;
         }
 
-        protected Task OnTextFieldPaste(ClipboardEventArgs args)
+        protected async Task OnTextFieldPaste(ClipboardEventArgs args)
         {
             Console.WriteLine("OnPaste MaskTextField");
-            return Task.CompletedTask;
+            var selectionStart = await GetSelectionStart();
+            var selectionEnd = await GetSelectionEnd();
+            // Store the paste selection range
+            changeSelectionData = new ChangeSelectionData()
+            {
+                ChangeType = InputChangeType.TextPasted,
+                SelectionStart = selectionStart,
+                SelectionEnd = selectionEnd
+            };
         }
 
         private void SetValue(string newValue)
