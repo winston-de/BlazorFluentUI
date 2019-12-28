@@ -87,13 +87,17 @@ namespace BlazorFabric
             set
             {
                 if (value == currentValue)
+                {
+                    Console.WriteLine("CurrentValue is same");
                     return;
+                }
                 currentValue = value;
                 OnChangeIntern(new ChangeEventArgs() { Value = value }).ConfigureAwait(true);
             }
         }
 
 
+        #region BlazorLifeCycle
         protected override Task OnInitializedAsync()
         {
             if (!string.IsNullOrWhiteSpace(ErrorMessage))
@@ -104,25 +108,32 @@ namespace BlazorFabric
             // to prevent changes after initialisation
             deferredValidationTime = DeferredValidationTime;
 
+            if (Value == null && DefaultValue != null)
+            {
+                Value = DefaultValue;
+            }
+
+            if (ValidateOnLoad && ValidateAllChanges())
+            {
+                Validate(Value);
+            }
 
             return base.OnInitializedAsync();
         }
 
         protected override Task OnParametersSetAsync()
         {
-            if (DefaultValue != null)
-                CurrentValue = DefaultValue;
-
-            if (Value != null)
-                CurrentValue = Value;
-
-            if (ValidateOnLoad && ValidateAllChanges())
-            {
-                Validate(CurrentValue);
-            }
+            //if (Value != null)
+            //{
+            //    CurrentValue = Value;
+            //    await InvokeAsync(() => StateHasChanged());
+            //    Console.WriteLine($"TextField: {Value}");
+            //}
 
             return base.OnParametersSetAsync();
         }
+        #endregion
+
 
         protected async Task OnInputIntern(ChangeEventArgs args)
         {
@@ -132,6 +143,7 @@ namespace BlazorFabric
                 ErrorMessage = "";
                 await InvokeAsync(() => StateHasChanged());
             }
+
             if (ValidateAllChanges())
             {
                 await DeferredValidation((string)args.Value).ConfigureAwait(false);
@@ -159,7 +171,7 @@ namespace BlazorFabric
             Console.WriteLine("OnFocus TextField"); 
             if (ValidateOnFocusIn && !defaultErrorMessageIsSet)
             {
-                Validate(CurrentValue);
+                Validate(Value);
             }
             //return Task.CompletedTask;
         }
@@ -173,7 +185,7 @@ namespace BlazorFabric
             isFocused = false;
             if (ValidateOnFocusOut && !defaultErrorMessageIsSet)
             {
-                Validate(CurrentValue);
+                Validate(Value);
             }
             //return Task.CompletedTask;
         }

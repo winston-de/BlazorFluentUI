@@ -24,7 +24,7 @@
                 <textarea id=@this.id
                           @ref="textAreaRef"
                           style=@inlineTextAreaStyle
-                          value=@CurrentValue
+                          value=@Value
                           @oninput=@OnInputIntern
                           @onchange=@OnChangeIntern
                           class="mediumFont ms-TextField-field"
@@ -50,7 +50,7 @@
                 <input type="@TypeUtils.InputMap[this.InputType]"
                        id=@this.id
                        @ref="textAreaRef"
-                       @bind-value=@CurrentValue
+                       @bind-value=@Value
                        @oninput=@OnInputIntern
                        autocomplete=@GetAutoCompleteString()
                        class="mediumFont ms-TextField-field"

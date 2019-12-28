@@ -219,6 +219,7 @@ namespace BlazorFabric
             DisplayValue = "";// maskWorker.GetMaskDisplay(Mask, maskCharData, MaskChar);
             await InvokeAsync(() => StateHasChanged());
             DisplayValue = maskWorker.GetMaskDisplay(Mask, maskCharData, MaskChar);
+            Console.WriteLine($"MaskTextFiel: {DisplayValue}");
             selection.SetSelection = true;
             selection.SelectionStart = cursorPos;
             selection.SelectionEnd = cursorPos;
