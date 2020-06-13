@@ -2,11 +2,11 @@ namespace BlazorFluentUI
 {
     public class IdSelector : ISelector
     {
-        public string SelectorName { get; set; }
+        public string? SelectorName { get; set; }
 
         public PseudoElements PseudoElement { get; set; } = PseudoElements.None;
 
-        public PseudoClass PseudoClass { get; set; }
+        public PseudoClass? PseudoClass { get; set; }
 
 
         private string ToPseudoClass()
@@ -24,7 +24,7 @@ namespace BlazorFluentUI
             return $"{PseudoMapper.PseudoClassesMappper[PseudoClass.PseudoClassType]}";
         }
 
-        public string GetSelectorAsString()
+        public string? GetSelectorAsString()
         {
             return $"#{(SelectorName != null ? SelectorName : "")}{(PseudoElement != PseudoElements.None ? PseudoMapper.PseudoElementsMappper[PseudoElement] : "")}{ToPseudoClass()}";
         }

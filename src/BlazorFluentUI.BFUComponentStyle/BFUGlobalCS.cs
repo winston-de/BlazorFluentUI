@@ -10,16 +10,16 @@ namespace BlazorFluentUI
     public class BFUGlobalCS : ComponentBase, IGlobalCSSheet, IDisposable
     {
         [Inject]
-        public IComponentStyle ComponentStyle { get; set; }
+        public IComponentStyle? ComponentStyle { get; set; }
 
-        private object component;
+        private object component= new object();
         /// <summary>
         /// P
         /// </summary>
         [Parameter]
         public object Component { get => component; set { component = value; ComponentType = component.GetType(); } }
 
-        private Type componentType;
+        private Type componentType = typeof(object);
         /// <summary>
         /// 
         /// </su
@@ -50,7 +50,7 @@ namespace BlazorFluentUI
         /// Function which create CSS-Rules which should be printed in head tag of index.html
         /// </summary>
         [Parameter]
-        public Func<ICollection<IRule>> CreateGlobalCss { get; set; }
+        public Func<ICollection<IRule>> CreateGlobalCss { get; set; } = () => throw new Exception("The callback for that creates the global css is missing."); 
 
         [Parameter]
         public EventCallback<bool> ReloadStyleChanged { get; set; }
@@ -59,12 +59,12 @@ namespace BlazorFluentUI
 
         public void Dispose()
         {
-            ComponentStyle.GlobalCSSheets.Remove(this);
+            ComponentStyle?.GlobalCSSheets.Remove(this);
         }
 
         protected override Task OnInitializedAsync()
         {
-            ComponentStyle.GlobalCSSheets.Add(this);
+            ComponentStyle?.GlobalCSSheets.Add(this);
             return base.OnInitializedAsync();
         }
 
@@ -74,7 +74,7 @@ namespace BlazorFluentUI
             {
                 ReloadStyle = false;
                 ReloadStyleChanged.InvokeAsync(false);
-                ComponentStyle.RulesChanged(this);
+                ComponentStyle?.RulesChanged(this);
             }
             base.OnParametersSet();
         }

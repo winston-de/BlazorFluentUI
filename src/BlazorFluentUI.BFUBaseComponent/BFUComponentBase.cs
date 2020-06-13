@@ -10,45 +10,44 @@ namespace BlazorFluentUI
     public class BFUComponentBase : ComponentBase
     {
         [CascadingParameter(Name = "Theme")]
-        public ITheme Theme { get; set; }
+        public ITheme? Theme { get; set; }
 
         //[Inject] private IComponentContext ComponentContext { get; set; }
-        [Inject] private IJSRuntime JSRuntime { get; set; }
-        [Inject] private ThemeProvider ThemeProvider { get; set; }
+        [Inject] private IJSRuntime? JSRuntime { get; set; }
+        [Inject] private ThemeProvider? ThemeProvider { get; set; }
 
-        [Parameter] public string ClassName { get; set; }
-        [Parameter] public string Style { get; set; }
+        [Parameter] public string? ClassName { get; set; }
+        [Parameter] public string? Style { get; set; }
 
         //ARIA Properties
-        [Parameter] public string AriaAtomic { get; set; }
-        [Parameter] public string AriaBusy { get; set; }
-        [Parameter] public string AriaControls { get; set; }
-        [Parameter] public string AriaCurrent { get; set; }
-        [Parameter] public string AriaDescribedBy { get; set; }
-        [Parameter] public string AriaDetails { get; set; }
+        [Parameter] public string? AriaAtomic { get; set; }
+        [Parameter] public string? AriaBusy { get; set; }
+        [Parameter] public string? AriaControls { get; set; }
+        [Parameter] public string? AriaCurrent { get; set; }
+        [Parameter] public string? AriaDescribedBy { get; set; }
+        [Parameter] public string? AriaDetails { get; set; }
         [Parameter] public bool AriaDisabled { get; set; }
-        [Parameter] public string AriaDropEffect { get; set; }
-        [Parameter] public string AriaErrorMessage { get; set; }
-        [Parameter] public string AriaFlowTo { get; set; }
-        [Parameter] public string AriaGrabbed { get; set; }
-        [Parameter] public string AriaHasPopup { get; set; }
-        [Parameter] public string AriaHidden { get; set; }
-        [Parameter] public string AriaInvalid { get; set; }
-        [Parameter] public string AriaKeyShortcuts { get; set; }
-        [Parameter] public string AriaLabel { get; set; }
-        [Parameter] public string AriaLabelledBy { get; set; }
+        [Parameter] public string? AriaDropEffect { get; set; }
+        [Parameter] public string? AriaErrorMessage { get; set; }
+        [Parameter] public string? AriaFlowTo { get; set; }
+        [Parameter] public string? AriaGrabbed { get; set; }
+        [Parameter] public string? AriaHasPopup { get; set; }
+        [Parameter] public string? AriaHidden { get; set; }
+        [Parameter] public string? AriaInvalid { get; set; }
+        [Parameter] public string? AriaKeyShortcuts { get; set; }
+        [Parameter] public string? AriaLabel { get; set; }
+        [Parameter] public string? AriaLabelledBy { get; set; }
         [Parameter] public AriaLive AriaLive { get; set; } = AriaLive.Polite;
-        [Parameter] public string AriaOwns { get; set; }
+        [Parameter] public string? AriaOwns { get; set; }
         [Parameter] public bool AriaReadonly { get; set; }  //not universal
-        [Parameter] public string AriaRelevant { get; set; }
-        [Parameter] public string AriaRoleDescription { get; set; }
+        [Parameter] public string? AriaRelevant { get; set; }
+        [Parameter] public string? AriaRoleDescription { get; set; }
 
         public ElementReference RootElementReference;
 
-        private ITheme _theme;
         private bool reloadStyle;
 
-        [Inject] ScopedStatics ScopedStatics { get; set; }
+        [Inject] ScopedStatics? ScopedStatics { get; set; }
 
         protected override void BuildRenderTree(RenderTreeBuilder builder)
         {
@@ -65,13 +64,20 @@ namespace BlazorFluentUI
 
         protected override void OnInitialized()
         {
-            ThemeProvider.ThemeChanged += OnThemeChangedPrivate;
-            ThemeProvider.ThemeChanged += OnThemeChangedProtected;
+            if (ThemeProvider != null)
+            {
+                ThemeProvider.ThemeChanged += OnThemeChangedPrivate;
+                ThemeProvider.ThemeChanged += OnThemeChangedProtected;
+            }
             base.OnInitialized();
         }
 
         protected override async Task OnAfterRenderAsync(bool firstRender)
         {
+            if (ScopedStatics == null)
+            {
+                throw new System.Exception("You didn't include the `services.AddBlazorFluentUI()` declaration in your Program.cs.");
+            }
             if (!ScopedStatics.FocusRectsInitialized)
             {
                 ScopedStatics.FocusRectsInitialized = true;
@@ -87,7 +93,7 @@ namespace BlazorFluentUI
                 var rectangle = await JSRuntime.InvokeAsync<Rectangle>("BlazorFluentUiBaseComponent.measureElementRect", RootElementReference);
                 return rectangle;
             }
-            catch (JSException ex)
+            catch 
             {
                 return new Rectangle();
             }
@@ -100,7 +106,7 @@ namespace BlazorFluentUI
                 var rectangle = await JSRuntime.InvokeAsync<Rectangle>("BlazorFluentUiBaseComponent.measureElementRect", cancellationToken, RootElementReference);
                 return rectangle;
             }
-            catch (JSException ex)
+            catch 
             {
                 return new Rectangle();
             }
@@ -113,7 +119,7 @@ namespace BlazorFluentUI
                 var rectangle = await JSRuntime.InvokeAsync<Rectangle>("BlazorFluentUiBaseComponent.measureElementRect", cancellationToken, elementReference);
                 return rectangle;
             }
-            catch (JSException ex)
+            catch 
             {
                 return new Rectangle();
             }
@@ -126,7 +132,7 @@ namespace BlazorFluentUI
                 var rectangle = await JSRuntime.InvokeAsync<Rectangle>("BlazorFluentUiBaseComponent.measureElementRect", elementReference);
                 return rectangle;
             }
-            catch (JSException ex)
+            catch
             {
                 return new Rectangle();
             }

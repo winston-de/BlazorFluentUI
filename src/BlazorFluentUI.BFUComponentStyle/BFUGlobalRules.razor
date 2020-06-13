@@ -1,18 +1,21 @@
-﻿@if (ComponentStyle.ClientSide)
+﻿@if (ComponentStyle != null)
 {
-    @string.Join("\r\n", ComponentStyle.GlobalCSRules)
-    @*@foreach (var rule in ComponentStyle.GlobalCSRules)
+    @if (ComponentStyle.ClientSide)
     {
-        <BFUCSS Value="@rule" />
-    }*@
-}
-else
-{
-    <style>
         @string.Join("\r\n", ComponentStyle.GlobalCSRules)
         @*@foreach (var rule in ComponentStyle.GlobalCSRules)
         {
-            <BFUCSS  Value="@rule" />
+            <BFUCSS Value="@rule" />
         }*@
-    </style>
+    }
+    else
+    {
+        <style>
+            @string.Join("\r\n", ComponentStyle.GlobalCSRules)
+            @*@foreach (var rule in ComponentStyle.GlobalCSRules)
+            {
+                <BFUCSS  Value="@rule" />
+            }*@
+        </style>
+    }
 }

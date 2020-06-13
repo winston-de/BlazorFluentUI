@@ -7,7 +7,7 @@ namespace BlazorFluentUI
     {
         bool ClientSide { get; }
 
-        BFUGlobalRules GlobalRules { get; set; }
+        BFUGlobalRules? GlobalRules { get; set; }
 
         ICollection<ILocalCSSheet> LocalCSSheets { get; set; }
 

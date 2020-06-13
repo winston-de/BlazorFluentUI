@@ -7,14 +7,22 @@ namespace BlazorFluentUI
     public partial class BFUGlobalRules : IDisposable
     {
         [Inject]
-        public IComponentStyle ComponentStyle { get; set; }
-        public Action OnDispose { get; set; }
+        public IComponentStyle? ComponentStyle { get; set; }
+
+        public Action? OnDispose { get; set; }
         private bool _isDisposed = false;
 
         protected override Task OnInitializedAsync()
         {
-            ComponentStyle.GlobalRules = this;
-            ComponentStyle.SetDisposedAction();
+            if (ComponentStyle != null)
+            {
+                ComponentStyle.GlobalRules = this;
+                ComponentStyle.SetDisposedAction();
+            }
+            else
+            {
+                throw new Exception("Cannot find ComponentStyle.  You probably forgot to wrap your app with a BFUTheme component.");
+            }
             return base.OnInitializedAsync();
         }
 
