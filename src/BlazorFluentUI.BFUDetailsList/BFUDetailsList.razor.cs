@@ -56,7 +56,7 @@ namespace BlazorFluentUI
         public EventCallback<ColumnResizedArgs<TItem>> OnColumnResized { get; set; }
 
         [Parameter]
-        public RenderFragment<TItem> RowTemplate { get; set; }
+        public RenderFragment<IndexedItem<TItem>>? RowTemplate { get; set; }
 
         [Parameter]
         public Selection<TItem> Selection { get; set; } = new Selection<TItem>();
@@ -85,9 +85,9 @@ namespace BlazorFluentUI
 
         Dictionary<string, double> _columnOverrides = new Dictionary<string, double>();
 
-        BFUGroupedList<TItem> groupedList;
-        BFUList<TItem> list;
-        BFUSelectionZone<TItem> selectionZone;
+        BFUGroupedList<TItem>? groupedList;
+        BFUList<TItem>? list;
+        BFUSelectionZone<TItem>? selectionZone;
 
         protected bool isAllSelected;
         private bool shouldRender = true;
@@ -192,16 +192,21 @@ namespace BlazorFluentUI
         {
             if (SubGroupSelector == null)
             {
-                return Selection.SelectedItems.Count() == ItemsSource.Count() && ItemsSource.Any();
+                return Selection.SelectedIndices.Count() == ItemsSource.Count() && ItemsSource.Any();
+                //return Selection.SelectedItems.Count() == ItemsSource.Count() && ItemsSource.Any();
             }
             else
             {
-                //source is grouped... need to recursively select them all.
-                var flattenedItems = ItemsSource?.SelectManyRecursive(x => SubGroupSelector(x));
-                if (flattenedItems == null)
-                    return false;
+                ////source is grouped... need to recursively select them all.
 
-                return flattenedItems.Count() == Selection.SelectedItems.Count() && flattenedItems.Any();
+                //var flattenedItems = ItemsSource?.SelectManyRecursive(x => SubGroupSelector(x));
+                //if (flattenedItems == null)
+                //    return false;
+
+                //return flattenedItems.Count() == Selection.SelectedItems.Count() && flattenedItems.Any();
+                if (groupedList == null)
+                    return false;
+                return groupedList.ShouldAllBeSelected();
             }
         }
 
@@ -209,9 +214,15 @@ namespace BlazorFluentUI
         {
             if (SubGroupSelector == null)
             {
-                if (Selection.SelectedItems.Count() != this.ItemsSource.Count())
+                if (Selection.SelectedIndices.Count() != this.ItemsSource.Count())
                 {
-                    selectionZone.AddItems(ItemsSource);
+                    //selectionZone.AddItems(ItemsSource);
+                    var list = new List<int>();
+                    for (var i=0; i< ItemsSource.Count(); i++)
+                    {
+                        list.Add(i);
+                    }
+                    selectionZone.AddIndices(list);
                 }
                 else
                 {
@@ -220,16 +231,17 @@ namespace BlazorFluentUI
             }
             else
             {
-                //source is grouped... need to recursively select them all.
-                var flattenedItems = this.ItemsSource?.SelectManyRecursive(x => SubGroupSelector(x));
-                if (flattenedItems.Count() != Selection.SelectedItems.Count())
-                {
-                    selectionZone.AddItems(flattenedItems);
-                }
-                else
-                {
-                    selectionZone.ClearSelection();
-                }
+                groupedList.ToggleSelectAll();
+                ////source is grouped... need to recursively select them all.
+                //var flattenedItems = this.ItemsSource?.SelectManyRecursive(x => SubGroupSelector(x));
+                //if (flattenedItems.Count() != Selection.SelectedItems.Count())
+                //{
+                //    selectionZone.AddItems(flattenedItems);
+                //}
+                //else
+                //{
+                //    selectionZone.ClearSelection();
+                //}
             }
         }
 

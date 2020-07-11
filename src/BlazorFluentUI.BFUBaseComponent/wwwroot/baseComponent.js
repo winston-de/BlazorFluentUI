@@ -1,12 +1,13 @@
 var BlazorFluentUiBaseComponent;
 (function (BlazorFluentUiBaseComponent) {
-    const test = 12333;
-    const DATA_IS_FOCUSABLE_ATTRIBUTE = 'data-is-focusable';
-    const DATA_IS_SCROLLABLE_ATTRIBUTE = 'data-is-scrollable';
-    const DATA_IS_VISIBLE_ATTRIBUTE = 'data-is-visible';
-    const FOCUSZONE_ID_ATTRIBUTE = 'data-focuszone-id';
-    const FOCUSZONE_SUB_ATTRIBUTE = 'data-is-sub-focuszone';
-    const IsFocusVisibleClassName = 'ms-Fabric--isFocusVisible';
+    var _a;
+    var test = 12333;
+    var DATA_IS_FOCUSABLE_ATTRIBUTE = 'data-is-focusable';
+    var DATA_IS_SCROLLABLE_ATTRIBUTE = 'data-is-scrollable';
+    var DATA_IS_VISIBLE_ATTRIBUTE = 'data-is-visible';
+    var FOCUSZONE_ID_ATTRIBUTE = 'data-focuszone-id';
+    var FOCUSZONE_SUB_ATTRIBUTE = 'data-is-sub-focuszone';
+    var IsFocusVisibleClassName = 'ms-Fabric--isFocusVisible';
     //interface IVirtualElement extends HTMLElement {
     //    _virtual: {
     //        parent?: IVirtualElement;
@@ -18,7 +19,7 @@ var BlazorFluentUiBaseComponent;
     //    children: HTMLElement[];
     //}
     //Store the element that the layer is started from so we can later match up the layer's children with the original parent.
-    const layerElements = {};
+    var layerElements = {};
     //const virtualRelationships: Map<IVirtualRelationship> = {};
     function initializeFocusRects() {
         if (!window.__hasInitializeFocusRects__) {
@@ -38,17 +39,17 @@ var BlazorFluentUiBaseComponent;
             window.document.body.classList.add(IsFocusVisibleClassName);
         }
     }
-    const DirectionalKeyCodes = {
-        [38 /* up */]: 1,
-        [40 /* down */]: 1,
-        [37 /* left */]: 1,
-        [39 /* right */]: 1,
-        [36 /* home */]: 1,
-        [35 /* end */]: 1,
-        [9 /* tab */]: 1,
-        [33 /* pageUp */]: 1,
-        [34 /* pageDown */]: 1
-    };
+    var DirectionalKeyCodes = (_a = {},
+        _a[38 /* up */] = 1,
+        _a[40 /* down */] = 1,
+        _a[37 /* left */] = 1,
+        _a[39 /* right */] = 1,
+        _a[36 /* home */] = 1,
+        _a[35 /* end */] = 1,
+        _a[9 /* tab */] = 1,
+        _a[33 /* pageUp */] = 1,
+        _a[34 /* pageDown */] = 1,
+        _a);
     function isDirectionalKeyCode(which) {
         return !!DirectionalKeyCodes[which];
     }
@@ -72,7 +73,7 @@ var BlazorFluentUiBaseComponent;
         _bodyScrollDisabledCount++;
     }
     BlazorFluentUiBaseComponent.disableBodyScroll = disableBodyScroll;
-    const _disableIosBodyScroll = (event) => {
+    var _disableIosBodyScroll = function (event) {
         event.preventDefault();
     };
     // end
@@ -89,7 +90,7 @@ var BlazorFluentUiBaseComponent;
     }
     BlazorFluentUiBaseComponent.getScrollHeight = getScrollHeight;
     function findScrollableParent(startingElement) {
-        let el = startingElement;
+        var el = startingElement;
         // First do a quick scan for the scrollable attribute.
         while (el && el !== document.body) {
             if (el.getAttribute(DATA_IS_SCROLLABLE_ATTRIBUTE) === 'true') {
@@ -101,8 +102,8 @@ var BlazorFluentUiBaseComponent;
         el = startingElement;
         while (el && el !== document.body) {
             if (el.getAttribute(DATA_IS_SCROLLABLE_ATTRIBUTE) !== 'false') {
-                const computedStyles = getComputedStyle(el);
-                let overflowY = computedStyles ? computedStyles.getPropertyValue('overflow-y') : '';
+                var computedStyles = getComputedStyle(el);
+                var overflowY = computedStyles ? computedStyles.getPropertyValue('overflow-y') : '';
                 if (overflowY && (overflowY === 'scroll' || overflowY === 'auto')) {
                     return el;
                 }
@@ -205,9 +206,9 @@ var BlazorFluentUiBaseComponent;
     function registerKeyEventsForList(element) {
         if (element instanceof HTMLElement) {
             var guid = Guid.newGuid();
-            eventElementRegister[guid] = [element, (ev) => {
-                    let elementToFocus;
-                    const containsExpandCollapseModifier = ev.altKey || ev.metaKey;
+            eventElementRegister[guid] = [element, function (ev) {
+                    var elementToFocus;
+                    var containsExpandCollapseModifier = ev.altKey || ev.metaKey;
                     switch (ev.keyCode) {
                         case 38 /* up */:
                             if (containsExpandCollapseModifier) {
@@ -249,7 +250,7 @@ var BlazorFluentUiBaseComponent;
     BlazorFluentUiBaseComponent.deregisterKeyEventsForList = deregisterKeyEventsForList;
     function registerWindowKeyDownEvent(dotnetRef, keyCode, functionName) {
         var guid = Guid.newGuid();
-        eventRegister[guid] = (ev) => {
+        eventRegister[guid] = function (ev) {
             if (ev.code == keyCode) {
                 ev.preventDefault();
                 ev.stopPropagation();
@@ -268,7 +269,7 @@ var BlazorFluentUiBaseComponent;
     BlazorFluentUiBaseComponent.deregisterWindowKeyDownEvent = deregisterWindowKeyDownEvent;
     function registerResizeEvent(dotnetRef, functionName) {
         var guid = Guid.newGuid();
-        eventRegister[guid] = debounce((ev) => {
+        eventRegister[guid] = debounce(function (ev) {
             dotnetRef.invokeMethodAsync(functionName, window.innerWidth, innerHeight);
         }, 100, { leading: true });
         window.addEventListener("resize", eventRegister[guid]);
@@ -281,14 +282,17 @@ var BlazorFluentUiBaseComponent;
         eventRegister[guid] = null;
     }
     BlazorFluentUiBaseComponent.deregisterResizeEvent = deregisterResizeEvent;
-    class Guid {
-        static newGuid() {
+    var Guid = /** @class */ (function () {
+        function Guid() {
+        }
+        Guid.newGuid = function () {
             return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function (c) {
                 var r = Math.random() * 16 | 0, v = c == 'x' ? r : (r & 0x3 | 0x8);
                 return v.toString(16);
             });
-        }
-    }
+        };
+        return Guid;
+    }());
     function findElementRecursive(element, matchFunction) {
         if (!element || element === document.body) {
             return null;
@@ -297,7 +301,7 @@ var BlazorFluentUiBaseComponent;
     }
     BlazorFluentUiBaseComponent.findElementRecursive = findElementRecursive;
     function elementContainsAttribute(element, attribute) {
-        let elementMatch = findElementRecursive(element, (testElement) => testElement.hasAttribute(attribute));
+        var elementMatch = findElementRecursive(element, function (testElement) { return testElement.hasAttribute(attribute); });
         return elementMatch && elementMatch.getAttribute(attribute);
     }
     BlazorFluentUiBaseComponent.elementContainsAttribute = elementContainsAttribute;
@@ -305,17 +309,18 @@ var BlazorFluentUiBaseComponent;
     /* Since elements can be stored in Blazor and we don't want to create more js files, this will hold last focused elements for restoring focus later. */
     var _lastFocus = {};
     function storeLastFocusedElement() {
-        let element = document.activeElement;
-        let htmlElement = element;
+        var element = document.activeElement;
+        var htmlElement = element;
         if (htmlElement) {
-            let guid = Guid.newGuid();
+            var guid = Guid.newGuid();
             _lastFocus[guid] = htmlElement;
             return guid;
         }
         return null;
     }
     BlazorFluentUiBaseComponent.storeLastFocusedElement = storeLastFocusedElement;
-    function restoreLastFocus(guid, restoreFocus = true) {
+    function restoreLastFocus(guid, restoreFocus) {
+        if (restoreFocus === void 0) { restoreFocus = true; }
         var htmlElement = _lastFocus[guid];
         if (htmlElement != null) {
             if (restoreFocus) {
@@ -334,7 +339,7 @@ var BlazorFluentUiBaseComponent;
     }
     BlazorFluentUiBaseComponent.focusElement = focusElement;
     function focusFirstElementChild(element) {
-        let child = this.getFirstFocusable(element, element, true);
+        var child = this.getFirstFocusable(element, element, true);
         if (child) {
             child.focus();
         }
@@ -348,9 +353,10 @@ var BlazorFluentUiBaseComponent;
     }
     BlazorFluentUiBaseComponent.shouldWrapFocus = shouldWrapFocus;
     function getFocusableByIndexPath(parent, path) {
-        let element = parent;
-        for (const index of path) {
-            const nextChild = element.children[Math.min(index, element.children.length - 1)];
+        var element = parent;
+        for (var _i = 0, path_1 = path; _i < path_1.length; _i++) {
+            var index = path_1[_i];
+            var nextChild = element.children[Math.min(index, element.children.length - 1)];
             if (!nextChild) {
                 break;
             }
@@ -373,17 +379,17 @@ var BlazorFluentUiBaseComponent;
         if (!element || element.disabled) {
             return false;
         }
-        let tabIndex = 0;
-        let tabIndexAttributeValue = null;
+        var tabIndex = 0;
+        var tabIndexAttributeValue = null;
         if (element && element.getAttribute) {
             tabIndexAttributeValue = element.getAttribute('tabIndex');
             if (tabIndexAttributeValue) {
                 tabIndex = parseInt(tabIndexAttributeValue, 10);
             }
         }
-        let isFocusableAttribute = element.getAttribute ? element.getAttribute(DATA_IS_FOCUSABLE_ATTRIBUTE) : null;
-        let isTabIndexSet = tabIndexAttributeValue !== null && tabIndex >= 0;
-        const result = !!element &&
+        var isFocusableAttribute = element.getAttribute ? element.getAttribute(DATA_IS_FOCUSABLE_ATTRIBUTE) : null;
+        var isTabIndexSet = tabIndexAttributeValue !== null && tabIndex >= 0;
+        var result = !!element &&
             isFocusableAttribute !== 'false' &&
             (element.tagName === 'A' ||
                 element.tagName === 'BUTTON' ||
@@ -399,7 +405,7 @@ var BlazorFluentUiBaseComponent;
         if (!element || !element.getAttribute) {
             return false;
         }
-        const visibilityAttribute = element.getAttribute(DATA_IS_VISIBLE_ATTRIBUTE);
+        var visibilityAttribute = element.getAttribute(DATA_IS_VISIBLE_ATTRIBUTE);
         // If the element is explicitly marked with the visibility attribute, return that value as boolean.
         if (visibilityAttribute !== null && visibilityAttribute !== undefined) {
             return visibilityAttribute === 'true';
@@ -415,7 +421,8 @@ var BlazorFluentUiBaseComponent;
         return false;
     }
     BlazorFluentUiBaseComponent.focusFirstChild = focusFirstChild;
-    function getParent(child, allowVirtualParents = true) {
+    function getParent(child, allowVirtualParents) {
+        if (allowVirtualParents === void 0) { allowVirtualParents = true; }
         return child && ((allowVirtualParents && getVirtualParent(child)) || (child.parentNode && child.parentNode));
     }
     BlazorFluentUiBaseComponent.getParent = getParent;
@@ -459,20 +466,21 @@ var BlazorFluentUiBaseComponent;
     //    return parent;
     //}
     function getVirtualParent(child) {
-        let parent;
+        var parent;
         if (child && child.dataset && child.dataset.parentLayerId) {
             parent = layerElements[child.dataset.parentLayerId];
         }
         return parent;
     }
     BlazorFluentUiBaseComponent.getVirtualParent = getVirtualParent;
-    function elementContains(parent, child, allowVirtualParents = true) {
-        let isContained = false;
+    function elementContains(parent, child, allowVirtualParents) {
+        if (allowVirtualParents === void 0) { allowVirtualParents = true; }
+        var isContained = false;
         if (parent && child) {
             if (allowVirtualParents) {
                 isContained = false;
                 while (child) {
-                    let nextParent = getParent(child);
+                    var nextParent = getParent(child);
                     if (nextParent === parent) {
                         isContained = true;
                         break;
@@ -491,7 +499,7 @@ var BlazorFluentUiBaseComponent;
         if (!currentElement || (currentElement === rootElement && suppressChildTraversal && !allowFocusRoot)) {
             return null;
         }
-        let isCurrentElementVisible = isElementVisible(currentElement);
+        var isCurrentElementVisible = isElementVisible(currentElement);
         // Check the current node, if it's not the first traversal.
         if (checkNode && isCurrentElementVisible && isElementTabbable(currentElement, tabbable)) {
             return currentElement;
@@ -500,7 +508,7 @@ var BlazorFluentUiBaseComponent;
         if (!suppressChildTraversal &&
             isCurrentElementVisible &&
             (includeElementsInFocusZones || !(isElementFocusZone(currentElement) || isElementFocusSubZone(currentElement)))) {
-            const childMatch = getNextElement(rootElement, currentElement.firstElementChild, true, true, false, includeElementsInFocusZones, allowFocusRoot, tabbable);
+            var childMatch = getNextElement(rootElement, currentElement.firstElementChild, true, true, false, includeElementsInFocusZones, allowFocusRoot, tabbable);
             if (childMatch) {
                 return childMatch;
             }
@@ -509,7 +517,7 @@ var BlazorFluentUiBaseComponent;
             return null;
         }
         // Check its sibling.
-        const siblingMatch = getNextElement(rootElement, currentElement.nextElementSibling, true, true, false, includeElementsInFocusZones, allowFocusRoot, tabbable);
+        var siblingMatch = getNextElement(rootElement, currentElement.nextElementSibling, true, true, false, includeElementsInFocusZones, allowFocusRoot, tabbable);
         if (siblingMatch) {
             return siblingMatch;
         }
@@ -523,27 +531,27 @@ var BlazorFluentUiBaseComponent;
         if (!currentElement || (!allowFocusRoot && currentElement === rootElement)) {
             return null;
         }
-        let isCurrentElementVisible = isElementVisible(currentElement);
+        var isCurrentElementVisible = isElementVisible(currentElement);
         // Check its children.
         if (traverseChildren &&
             isCurrentElementVisible &&
             (includeElementsInFocusZones || !(isElementFocusZone(currentElement) || isElementFocusSubZone(currentElement)))) {
-            const childMatch = getPreviousElement(rootElement, currentElement.lastElementChild, true, true, true, includeElementsInFocusZones, allowFocusRoot, tabbable);
+            var childMatch = getPreviousElement(rootElement, currentElement.lastElementChild, true, true, true, includeElementsInFocusZones, allowFocusRoot, tabbable);
             if (childMatch) {
                 if ((tabbable && isElementTabbable(childMatch, true)) || !tabbable) {
                     return childMatch;
                 }
-                const childMatchSiblingMatch = getPreviousElement(rootElement, childMatch.previousElementSibling, true, true, true, includeElementsInFocusZones, allowFocusRoot, tabbable);
+                var childMatchSiblingMatch = getPreviousElement(rootElement, childMatch.previousElementSibling, true, true, true, includeElementsInFocusZones, allowFocusRoot, tabbable);
                 if (childMatchSiblingMatch) {
                     return childMatchSiblingMatch;
                 }
-                let childMatchParent = childMatch.parentElement;
+                var childMatchParent = childMatch.parentElement;
                 // At this point if we have not found any potential matches
                 // start looking at the rest of the subtree under the currentParent.
                 // NOTE: We do not want to recurse here because doing so could
                 // cause elements to get skipped.
                 while (childMatchParent && childMatchParent !== currentElement) {
-                    const childMatchParentMatch = getPreviousElement(rootElement, childMatchParent.previousElementSibling, true, true, true, includeElementsInFocusZones, allowFocusRoot, tabbable);
+                    var childMatchParentMatch = getPreviousElement(rootElement, childMatchParent.previousElementSibling, true, true, true, includeElementsInFocusZones, allowFocusRoot, tabbable);
                     if (childMatchParentMatch) {
                         return childMatchParentMatch;
                     }
@@ -556,7 +564,7 @@ var BlazorFluentUiBaseComponent;
             return currentElement;
         }
         // Check its previous sibling.
-        const siblingMatch = getPreviousElement(rootElement, currentElement.previousElementSibling, true, true, true, includeElementsInFocusZones, allowFocusRoot, tabbable);
+        var siblingMatch = getPreviousElement(rootElement, currentElement.previousElementSibling, true, true, true, includeElementsInFocusZones, allowFocusRoot, tabbable);
         if (siblingMatch) {
             return siblingMatch;
         }
@@ -569,13 +577,13 @@ var BlazorFluentUiBaseComponent;
     BlazorFluentUiBaseComponent.getPreviousElement = getPreviousElement;
     /** Raises a click event. */
     function raiseClick(target) {
-        const event = createNewEvent('MouseEvents');
+        var event = createNewEvent('MouseEvents');
         event.initEvent('click', true, true);
         target.dispatchEvent(event);
     }
     BlazorFluentUiBaseComponent.raiseClick = raiseClick;
     function createNewEvent(eventName) {
-        let event;
+        var event;
         if (typeof Event === 'function') {
             // Chrome, Opera, Firefox
             event = new Event(eventName);
@@ -597,12 +605,12 @@ var BlazorFluentUiBaseComponent;
     BlazorFluentUiBaseComponent.isElementFocusSubZone = isElementFocusSubZone;
     function on(element, eventName, callback, options) {
         element.addEventListener(eventName, callback, options);
-        return () => element.removeEventListener(eventName, callback, options);
+        return function () { return element.removeEventListener(eventName, callback, options); };
     }
     BlazorFluentUiBaseComponent.on = on;
     function _expandRect(rect, pagesBefore, pagesAfter) {
-        const top = rect.top - pagesBefore * rect.height;
-        const height = rect.height + (pagesBefore + pagesAfter) * rect.height;
+        var top = rect.top - pagesBefore * rect.height;
+        var height = rect.height + (pagesBefore + pagesAfter) * rect.height;
         return {
             top: top,
             bottom: top + height,
@@ -628,29 +636,30 @@ var BlazorFluentUiBaseComponent;
         return targetRect;
     }
     function debounce(func, wait, options) {
+        var _this = this;
         if (this._isDisposed) {
-            let noOpFunction = (() => {
+            var noOpFunction = (function () {
                 /** Do nothing */
             });
-            noOpFunction.cancel = () => {
+            noOpFunction.cancel = function () {
                 return;
             };
             /* tslint:disable:no-any */
-            noOpFunction.flush = (() => null);
+            noOpFunction.flush = (function () { return null; });
             /* tslint:enable:no-any */
-            noOpFunction.pending = () => false;
+            noOpFunction.pending = function () { return false; };
             return noOpFunction;
         }
-        let waitMS = wait || 0;
-        let leading = false;
-        let trailing = true;
-        let maxWait = null;
-        let lastCallTime = 0;
-        let lastExecuteTime = new Date().getTime();
-        let lastResult;
+        var waitMS = wait || 0;
+        var leading = false;
+        var trailing = true;
+        var maxWait = null;
+        var lastCallTime = 0;
+        var lastExecuteTime = new Date().getTime();
+        var lastResult;
         // tslint:disable-next-line:no-any
-        let lastArgs;
-        let timeoutId = null;
+        var lastArgs;
+        var timeoutId = null;
         if (options && typeof options.leading === 'boolean') {
             leading = options.leading;
         }
@@ -660,30 +669,30 @@ var BlazorFluentUiBaseComponent;
         if (options && typeof options.maxWait === 'number' && !isNaN(options.maxWait)) {
             maxWait = options.maxWait;
         }
-        let markExecuted = (time) => {
+        var markExecuted = function (time) {
             if (timeoutId) {
-                this.clearTimeout(timeoutId);
+                _this.clearTimeout(timeoutId);
                 timeoutId = null;
             }
             lastExecuteTime = time;
         };
-        let invokeFunction = (time) => {
+        var invokeFunction = function (time) {
             markExecuted(time);
-            lastResult = func.apply(this._parent, lastArgs);
+            lastResult = func.apply(_this._parent, lastArgs);
         };
-        let callback = (userCall) => {
-            let now = new Date().getTime();
-            let executeImmediately = false;
+        var callback = function (userCall) {
+            var now = new Date().getTime();
+            var executeImmediately = false;
             if (userCall) {
                 if (leading && now - lastCallTime >= waitMS) {
                     executeImmediately = true;
                 }
                 lastCallTime = now;
             }
-            let delta = now - lastCallTime;
-            let waitLength = waitMS - delta;
-            let maxWaitDelta = now - lastExecuteTime;
-            let maxWaitExpired = false;
+            var delta = now - lastCallTime;
+            var waitLength = waitMS - delta;
+            var maxWaitDelta = now - lastExecuteTime;
+            var maxWaitExpired = false;
             if (maxWait !== null) {
                 // maxWait only matters when there is a pending callback
                 if (maxWaitDelta >= maxWait && timeoutId) {
@@ -697,27 +706,31 @@ var BlazorFluentUiBaseComponent;
                 invokeFunction(now);
             }
             else if ((timeoutId === null || !userCall) && trailing) {
-                timeoutId = this.setTimeout(callback, waitLength);
+                timeoutId = _this.setTimeout(callback, waitLength);
             }
             return lastResult;
         };
-        let pending = () => {
+        var pending = function () {
             return !!timeoutId;
         };
-        let cancel = () => {
+        var cancel = function () {
             if (pending()) {
                 // Mark the debounced function as having executed
                 markExecuted(new Date().getTime());
             }
         };
-        let flush = () => {
+        var flush = function () {
             if (pending()) {
                 invokeFunction(new Date().getTime());
             }
             return lastResult;
         };
         // tslint:disable-next-line:no-any
-        let resultFunction = ((...args) => {
+        var resultFunction = (function () {
+            var args = [];
+            for (var _i = 0; _i < arguments.length; _i++) {
+                args[_i] = arguments[_i];
+            }
             lastArgs = args;
             return callback(true);
         });
@@ -727,17 +740,17 @@ var BlazorFluentUiBaseComponent;
         return resultFunction;
     }
     BlazorFluentUiBaseComponent.debounce = debounce;
-    const RTL_LOCAL_STORAGE_KEY = 'isRTL';
-    let _isRTL;
+    var RTL_LOCAL_STORAGE_KEY = 'isRTL';
+    var _isRTL;
     function getRTL() {
         if (_isRTL === undefined) {
             // Fabric supports persisting the RTL setting between page refreshes via session storage
-            let savedRTL = getItem(RTL_LOCAL_STORAGE_KEY);
+            var savedRTL = getItem(RTL_LOCAL_STORAGE_KEY);
             if (savedRTL !== null) {
                 _isRTL = savedRTL === '1';
                 setRTL(_isRTL);
             }
-            let doc = document;
+            var doc = document;
             if (_isRTL === undefined && doc) {
                 _isRTL = ((doc.body && doc.body.getAttribute('dir')) || doc.documentElement.getAttribute('dir')) === 'rtl';
                 //mergeStylesSetRTL(_isRTL);
@@ -746,8 +759,9 @@ var BlazorFluentUiBaseComponent;
         return !!_isRTL;
     }
     BlazorFluentUiBaseComponent.getRTL = getRTL;
-    function setRTL(isRTL, persistSetting = false) {
-        let doc = document;
+    function setRTL(isRTL, persistSetting) {
+        if (persistSetting === void 0) { persistSetting = false; }
+        var doc = document;
         if (doc) {
             doc.documentElement.setAttribute('dir', isRTL ? 'rtl' : 'ltr');
         }
@@ -759,7 +773,7 @@ var BlazorFluentUiBaseComponent;
     }
     BlazorFluentUiBaseComponent.setRTL = setRTL;
     function getItem(key) {
-        let result = null;
+        var result = null;
         try {
             result = window.sessionStorage.getItem(key);
         }
@@ -778,6 +792,425 @@ var BlazorFluentUiBaseComponent;
         }
     }
     BlazorFluentUiBaseComponent.setItem = setItem;
+    var Async = /** @class */ (function () {
+        // tslint:disable-next-line:no-any
+        function Async(parent, onError) {
+            this._timeoutIds = null;
+            this._immediateIds = null;
+            this._intervalIds = null;
+            this._animationFrameIds = null;
+            this._isDisposed = false;
+            this._parent = parent || null;
+            this._onErrorHandler = onError;
+            this._noop = function () {
+                /* do nothing */
+            };
+        }
+        /**
+         * Dispose function, clears all async operations.
+         */
+        Async.prototype.dispose = function () {
+            var id;
+            this._isDisposed = true;
+            this._parent = null;
+            // Clear timeouts.
+            if (this._timeoutIds) {
+                for (id in this._timeoutIds) {
+                    if (this._timeoutIds.hasOwnProperty(id)) {
+                        this.clearTimeout(parseInt(id, 10));
+                    }
+                }
+                this._timeoutIds = null;
+            }
+            // Clear immediates.
+            if (this._immediateIds) {
+                for (id in this._immediateIds) {
+                    if (this._immediateIds.hasOwnProperty(id)) {
+                        this.clearImmediate(parseInt(id, 10));
+                    }
+                }
+                this._immediateIds = null;
+            }
+            // Clear intervals.
+            if (this._intervalIds) {
+                for (id in this._intervalIds) {
+                    if (this._intervalIds.hasOwnProperty(id)) {
+                        this.clearInterval(parseInt(id, 10));
+                    }
+                }
+                this._intervalIds = null;
+            }
+            // Clear animation frames.
+            if (this._animationFrameIds) {
+                for (id in this._animationFrameIds) {
+                    if (this._animationFrameIds.hasOwnProperty(id)) {
+                        this.cancelAnimationFrame(parseInt(id, 10));
+                    }
+                }
+                this._animationFrameIds = null;
+            }
+        };
+        /**
+         * SetTimeout override, which will auto cancel the timeout during dispose.
+         * @param callback - Callback to execute.
+         * @param duration - Duration in milliseconds.
+         * @returns The setTimeout id.
+         */
+        Async.prototype.setTimeout = function (callback, duration) {
+            var _this = this;
+            var timeoutId = 0;
+            if (!this._isDisposed) {
+                if (!this._timeoutIds) {
+                    this._timeoutIds = {};
+                }
+                /* tslint:disable:ban-native-functions */
+                timeoutId = setTimeout(function () {
+                    // Time to execute the timeout, enqueue it as a foreground task to be executed.
+                    try {
+                        // Now delete the record and call the callback.
+                        if (_this._timeoutIds) {
+                            delete _this._timeoutIds[timeoutId];
+                        }
+                        callback.apply(_this._parent);
+                    }
+                    catch (e) {
+                        if (_this._onErrorHandler) {
+                            _this._onErrorHandler(e);
+                        }
+                    }
+                }, duration);
+                /* tslint:enable:ban-native-functions */
+                this._timeoutIds[timeoutId] = true;
+            }
+            return timeoutId;
+        };
+        /**
+         * Clears the timeout.
+         * @param id - Id to cancel.
+         */
+        Async.prototype.clearTimeout = function (id) {
+            if (this._timeoutIds && this._timeoutIds[id]) {
+                /* tslint:disable:ban-native-functions */
+                clearTimeout(id);
+                delete this._timeoutIds[id];
+                /* tslint:enable:ban-native-functions */
+            }
+        };
+        /**
+         * SetImmediate override, which will auto cancel the immediate during dispose.
+         * @param callback - Callback to execute.
+         * @param targetElement - Optional target element to use for identifying the correct window.
+         * @returns The setTimeout id.
+         */
+        Async.prototype.setImmediate = function (callback, targetElement) {
+            var _this = this;
+            var immediateId = 0;
+            var win = getWindow(targetElement);
+            if (!this._isDisposed) {
+                if (!this._immediateIds) {
+                    this._immediateIds = {};
+                }
+                /* tslint:disable:ban-native-functions */
+                var setImmediateCallback = function () {
+                    // Time to execute the timeout, enqueue it as a foreground task to be executed.
+                    try {
+                        // Now delete the record and call the callback.
+                        if (_this._immediateIds) {
+                            delete _this._immediateIds[immediateId];
+                        }
+                        callback.apply(_this._parent);
+                    }
+                    catch (e) {
+                        _this._logError(e);
+                    }
+                };
+                immediateId = win.setTimeout(setImmediateCallback, 0);
+                /* tslint:enable:ban-native-functions */
+                this._immediateIds[immediateId] = true;
+            }
+            return immediateId;
+        };
+        /**
+         * Clears the immediate.
+         * @param id - Id to cancel.
+         * @param targetElement - Optional target element to use for identifying the correct window.
+         */
+        Async.prototype.clearImmediate = function (id, targetElement) {
+            var win = getWindow(targetElement);
+            if (this._immediateIds && this._immediateIds[id]) {
+                /* tslint:disable:ban-native-functions */
+                win.clearTimeout(id);
+                delete this._immediateIds[id];
+                /* tslint:enable:ban-native-functions */
+            }
+        };
+        /**
+         * SetInterval override, which will auto cancel the timeout during dispose.
+         * @param callback - Callback to execute.
+         * @param duration - Duration in milliseconds.
+         * @returns The setTimeout id.
+         */
+        Async.prototype.setInterval = function (callback, duration) {
+            var _this = this;
+            var intervalId = 0;
+            if (!this._isDisposed) {
+                if (!this._intervalIds) {
+                    this._intervalIds = {};
+                }
+                /* tslint:disable:ban-native-functions */
+                intervalId = setInterval(function () {
+                    // Time to execute the interval callback, enqueue it as a foreground task to be executed.
+                    try {
+                        callback.apply(_this._parent);
+                    }
+                    catch (e) {
+                        _this._logError(e);
+                    }
+                }, duration);
+                /* tslint:enable:ban-native-functions */
+                this._intervalIds[intervalId] = true;
+            }
+            return intervalId;
+        };
+        /**
+         * Clears the interval.
+         * @param id - Id to cancel.
+         */
+        Async.prototype.clearInterval = function (id) {
+            if (this._intervalIds && this._intervalIds[id]) {
+                /* tslint:disable:ban-native-functions */
+                clearInterval(id);
+                delete this._intervalIds[id];
+                /* tslint:enable:ban-native-functions */
+            }
+        };
+        /**
+         * Creates a function that, when executed, will only call the func function at most once per
+         * every wait milliseconds. Provide an options object to indicate that func should be invoked
+         * on the leading and/or trailing edge of the wait timeout. Subsequent calls to the throttled
+         * function will return the result of the last func call.
+         *
+         * Note: If leading and trailing options are true func will be called on the trailing edge of
+         * the timeout only if the throttled function is invoked more than once during the wait timeout.
+         *
+         * @param func - The function to throttle.
+         * @param wait - The number of milliseconds to throttle executions to. Defaults to 0.
+         * @param options - The options object.
+         * @returns The new throttled function.
+         */
+        Async.prototype.throttle = function (func, wait, options) {
+            var _this = this;
+            if (this._isDisposed) {
+                return this._noop;
+            }
+            var waitMS = wait || 0;
+            var leading = true;
+            var trailing = true;
+            var lastExecuteTime = 0;
+            var lastResult;
+            // tslint:disable-next-line:no-any
+            var lastArgs;
+            var timeoutId = null;
+            if (options && typeof options.leading === 'boolean') {
+                leading = options.leading;
+            }
+            if (options && typeof options.trailing === 'boolean') {
+                trailing = options.trailing;
+            }
+            var callback = function (userCall) {
+                var now = new Date().getTime();
+                var delta = now - lastExecuteTime;
+                var waitLength = leading ? waitMS - delta : waitMS;
+                if (delta >= waitMS && (!userCall || leading)) {
+                    lastExecuteTime = now;
+                    if (timeoutId) {
+                        _this.clearTimeout(timeoutId);
+                        timeoutId = null;
+                    }
+                    lastResult = func.apply(_this._parent, lastArgs);
+                }
+                else if (timeoutId === null && trailing) {
+                    timeoutId = _this.setTimeout(callback, waitLength);
+                }
+                return lastResult;
+            };
+            // tslint:disable-next-line:no-any
+            var resultFunction = function () {
+                var args = [];
+                for (var _i = 0; _i < arguments.length; _i++) {
+                    args[_i] = arguments[_i];
+                }
+                lastArgs = args;
+                return callback(true);
+            };
+            return resultFunction;
+        };
+        /**
+         * Creates a function that will delay the execution of func until after wait milliseconds have
+         * elapsed since the last time it was invoked. Provide an options object to indicate that func
+         * should be invoked on the leading and/or trailing edge of the wait timeout. Subsequent calls
+         * to the debounced function will return the result of the last func call.
+         *
+         * Note: If leading and trailing options are true func will be called on the trailing edge of
+         * the timeout only if the debounced function is invoked more than once during the wait
+         * timeout.
+         *
+         * @param func - The function to debounce.
+         * @param wait - The number of milliseconds to delay.
+         * @param options - The options object.
+         * @returns The new debounced function.
+         */
+        Async.prototype.debounce = function (func, wait, options) {
+            var _this = this;
+            if (this._isDisposed) {
+                var noOpFunction = (function () {
+                    /** Do nothing */
+                });
+                noOpFunction.cancel = function () {
+                    return;
+                };
+                /* tslint:disable:no-any */
+                noOpFunction.flush = (function () { return null; });
+                /* tslint:enable:no-any */
+                noOpFunction.pending = function () { return false; };
+                return noOpFunction;
+            }
+            var waitMS = wait || 0;
+            var leading = false;
+            var trailing = true;
+            var maxWait = null;
+            var lastCallTime = 0;
+            var lastExecuteTime = new Date().getTime();
+            var lastResult;
+            // tslint:disable-next-line:no-any
+            var lastArgs;
+            var timeoutId = null;
+            if (options && typeof options.leading === 'boolean') {
+                leading = options.leading;
+            }
+            if (options && typeof options.trailing === 'boolean') {
+                trailing = options.trailing;
+            }
+            if (options && typeof options.maxWait === 'number' && !isNaN(options.maxWait)) {
+                maxWait = options.maxWait;
+            }
+            var markExecuted = function (time) {
+                if (timeoutId) {
+                    _this.clearTimeout(timeoutId);
+                    timeoutId = null;
+                }
+                lastExecuteTime = time;
+            };
+            var invokeFunction = function (time) {
+                markExecuted(time);
+                lastResult = func.apply(_this._parent, lastArgs);
+            };
+            var callback = function (userCall) {
+                var now = new Date().getTime();
+                var executeImmediately = false;
+                if (userCall) {
+                    if (leading && now - lastCallTime >= waitMS) {
+                        executeImmediately = true;
+                    }
+                    lastCallTime = now;
+                }
+                var delta = now - lastCallTime;
+                var waitLength = waitMS - delta;
+                var maxWaitDelta = now - lastExecuteTime;
+                var maxWaitExpired = false;
+                if (maxWait !== null) {
+                    // maxWait only matters when there is a pending callback
+                    if (maxWaitDelta >= maxWait && timeoutId) {
+                        maxWaitExpired = true;
+                    }
+                    else {
+                        waitLength = Math.min(waitLength, maxWait - maxWaitDelta);
+                    }
+                }
+                if (delta >= waitMS || maxWaitExpired || executeImmediately) {
+                    invokeFunction(now);
+                }
+                else if ((timeoutId === null || !userCall) && trailing) {
+                    timeoutId = _this.setTimeout(callback, waitLength);
+                }
+                return lastResult;
+            };
+            var pending = function () {
+                return !!timeoutId;
+            };
+            var cancel = function () {
+                if (pending()) {
+                    // Mark the debounced function as having executed
+                    markExecuted(new Date().getTime());
+                }
+            };
+            var flush = function () {
+                if (pending()) {
+                    invokeFunction(new Date().getTime());
+                }
+                return lastResult;
+            };
+            // tslint:disable-next-line:no-any
+            var resultFunction = (function () {
+                var args = [];
+                for (var _i = 0; _i < arguments.length; _i++) {
+                    args[_i] = arguments[_i];
+                }
+                lastArgs = args;
+                return callback(true);
+            });
+            resultFunction.cancel = cancel;
+            resultFunction.flush = flush;
+            resultFunction.pending = pending;
+            return resultFunction;
+        };
+        Async.prototype.requestAnimationFrame = function (callback, targetElement) {
+            var _this = this;
+            var animationFrameId = 0;
+            var win = getWindow(targetElement);
+            if (!this._isDisposed) {
+                if (!this._animationFrameIds) {
+                    this._animationFrameIds = {};
+                }
+                /* tslint:disable:ban-native-functions */
+                var animationFrameCallback = function () {
+                    try {
+                        // Now delete the record and call the callback.
+                        if (_this._animationFrameIds) {
+                            delete _this._animationFrameIds[animationFrameId];
+                        }
+                        callback.apply(_this._parent);
+                    }
+                    catch (e) {
+                        _this._logError(e);
+                    }
+                };
+                animationFrameId = win.requestAnimationFrame
+                    ? win.requestAnimationFrame(animationFrameCallback)
+                    : win.setTimeout(animationFrameCallback, 0);
+                /* tslint:enable:ban-native-functions */
+                this._animationFrameIds[animationFrameId] = true;
+            }
+            return animationFrameId;
+        };
+        Async.prototype.cancelAnimationFrame = function (id, targetElement) {
+            var win = getWindow(targetElement);
+            if (this._animationFrameIds && this._animationFrameIds[id]) {
+                /* tslint:disable:ban-native-functions */
+                win.cancelAnimationFrame ? win.cancelAnimationFrame(id) : win.clearTimeout(id);
+                /* tslint:enable:ban-native-functions */
+                delete this._animationFrameIds[id];
+            }
+        };
+        // tslint:disable-next-line:no-any
+        Async.prototype._logError = function (e) {
+            if (this._onErrorHandler) {
+                this._onErrorHandler(e);
+            }
+        };
+        return Async;
+    }());
+    BlazorFluentUiBaseComponent.Async = Async;
 })(BlazorFluentUiBaseComponent || (BlazorFluentUiBaseComponent = {}));
 //}
 window.BlazorFluentUiBaseComponent = BlazorFluentUiBaseComponent;

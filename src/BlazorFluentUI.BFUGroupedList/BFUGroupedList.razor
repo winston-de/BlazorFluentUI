@@ -13,18 +13,19 @@
           >
         <ItemTemplate>
 
-            @if (context is HeaderItem<TItem>)
+            @if (context.Item is HeaderItem<TItem>)
             {
-                var header = (HeaderItem<TItem>)context;
+                var header = context.Item as HeaderItem<TItem>;
                 <BFUGroupHeader IsOpen=@header.IsOpen 
                              OnOpenChanged=@((isOpen)=>header.IsOpen = isOpen)
                              Count=@header.RecursiveCount
                              GroupLevel=@header.Depth
                              Name=@header.Name 
                              Compact=@Compact 
+                             ListIndex=@context.Index
                              IsSelectionCheckVisible=@(SelectionZone != null)
-                             OnClick=@(()=>OnHeaderClicked(header))
-                             OnToggle=@(()=>OnHeaderToggled(header))
+                             OnClick=@(()=>OnHeaderClicked(context))
+                             OnToggle=@(()=>OnHeaderToggled(context))
                              />
             }
             else

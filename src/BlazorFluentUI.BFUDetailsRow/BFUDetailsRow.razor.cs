@@ -49,15 +49,11 @@ namespace BlazorFluentUI
         [Parameter]
         public TItem Item { get; set; }
 
-        //[Parameter]
-        //public int ItemIndex { get; set; }
+        [Parameter]
+        public int ItemIndex { get; set; }
 
         [Parameter]
         public double RowWidth { get; set; } = 0;
-
-        //[Parameter]
-        //public Selection<TItem> Selection { get; set; }
-        //public bool IsSelected { get; set; }
 
         [Parameter]
         public SelectionMode SelectionMode { get; set; }
@@ -105,9 +101,9 @@ namespace BlazorFluentUI
 
             if (SelectionZone != null)
             {
-                SelectionZone.SelectedItemsObservable.Subscribe(x =>
+                SelectionZone.SelectedIndicesObservable.Subscribe(x =>
                 {
-                    if (x.Contains(this.Item))
+                    if (x.Contains(this.ItemIndex))
                     {
                         if (isSelected != true)
                         {

@@ -12,7 +12,7 @@ namespace BlazorFluentUI
     public partial class BFUSelectionZone<TItem> : BFUComponentBase
     {
         [Parameter]
-        public RenderFragment ChildContent { get; set; }
+        public RenderFragment? ChildContent { get; set; }
 
         [Parameter]
         public bool DisableAutoSelectOnInputElements { get; set; }
@@ -25,7 +25,7 @@ namespace BlazorFluentUI
 
         [Parameter]
         public bool IsSelectedOnFocus { get; set; } = true;
-
+        
         [Parameter]
         public EventCallback<TItem> OnItemContextMenu { get; set; }
 
@@ -33,7 +33,7 @@ namespace BlazorFluentUI
         public EventCallback<TItem> OnItemInvoked { get; set; }
 
         [Parameter]
-        public Selection<TItem> Selection { get; set; }
+        public Selection<TItem>? Selection { get; set; }
 
         [Parameter]
         public EventCallback<Selection<TItem>> SelectionChanged { get; set; }
@@ -45,11 +45,14 @@ namespace BlazorFluentUI
         public bool SelectionPreservedOnEmptyClick { get; set; }
 
 
-        private HashSet<TItem> selectedItems = new HashSet<TItem>();
+        private IEnumerable<TItem>? itemsSource;  //need to assume this iteration of ItemsSource has temporary order.
+        //private Dictionary<Guid, TItem> dic;
+        //private HashSet<Guid> selectedKeys;
+        private HashSet<int> selectedIndices;// = new HashSet<TItem>();
 
-        private BehaviorSubject<ICollection<TItem>> selectedItemsSubject;
+        private BehaviorSubject<ICollection<int>> selectedIndicesSubject;
         
-        public IObservable<ICollection<TItem>> SelectedItemsObservable { get; private set; }
+        public IObservable<ICollection<int>> SelectedIndicesObservable { get; private set; }
 
         private bool doNotRenderOnce = false;
 
@@ -67,35 +70,72 @@ namespace BlazorFluentUI
             //return base.ShouldRender();
         }
 
-        protected override void OnInitialized()
+        public BFUSelectionZone()
         {
-            selectedItemsSubject = new BehaviorSubject<ICollection<TItem>>(selectedItems);
-            SelectedItemsObservable = selectedItemsSubject.AsObservable();
-            base.OnInitialized();
+            //dic = new Dictionary<Guid, TItem>();
+            //selectedKeys = new HashSet<Guid>();
+            selectedIndices = new HashSet<int>();
+            selectedIndicesSubject = new BehaviorSubject<ICollection<int>>(selectedIndices);
+            SelectedIndicesObservable = selectedIndicesSubject.AsObservable();
         }
+
+        //protected override void OnInitialized()
+        //{
+        //    selectedItemsSubject = new BehaviorSubject<ICollection<TItem>>(selectedItems);
+        //    SelectedItemsObservable = selectedItemsSubject.AsObservable();
+        //    base.OnInitialized();
+        //}
 
         protected override async Task OnParametersSetAsync()
         {
-            if (Selection != null && Selection.SelectedItems != selectedItems)
+            //if (ItemsSource != itemsSource)
+            //{
+            //    itemsSource = ItemsSource;
+            //}
+
+            if (Selection != null && Selection.SelectedIndices != selectedIndices)
             {
-                selectedItems = new System.Collections.Generic.HashSet<TItem>(Selection.SelectedItems);
+                selectedIndices = new System.Collections.Generic.HashSet<int>(Selection.SelectedIndices);
                 //selectedItemsSubject.OnNext(selectedItems);
                 //StateHasChanged();
             }
 
-            if (SelectionMode == SelectionMode.Single && selectedItems.Count() > 1)
+            if (SelectionMode == SelectionMode.Single && selectedIndices.Count() > 1)
             {
-                selectedItems.Clear();
+                selectedIndices.Clear();
                 //selectedItemsSubject.OnNext(selectedItems);
-                await SelectionChanged.InvokeAsync(new Selection<TItem>(selectedItems));
+                await SelectionChanged.InvokeAsync(new Selection<TItem>(selectedIndices));
             }
-            else if (SelectionMode == SelectionMode.None && selectedItems.Count() > 0)
+            else if (SelectionMode == SelectionMode.None && selectedIndices.Count() > 0)
             {
-                selectedItems.Clear();
+                selectedIndices.Clear();
                 //selectedItemsSubject.OnNext(selectedItems);
-                await SelectionChanged.InvokeAsync(new Selection<TItem>(selectedItems));
+                await SelectionChanged.InvokeAsync(new Selection<TItem>(selectedIndices));
             }
             await base.OnParametersSetAsync();
+        }
+
+        //private void CreateKeys()
+        //{
+        //    dic.Clear();
+        //    if (itemsSource != null)
+        //    {
+        //        foreach (var item in itemsSource)
+        //        {
+        //            dic.Add(Guid.NewGuid(), item);
+        //        }
+        //    }
+        //}
+
+        public TItem GetItemAtIndex(int index)
+        {
+            return itemsSource.ElementAt(index);
+        }
+
+        public IEnumerable<int> GetSelectedIndices()
+        {
+            return Selection?.SelectedIndices;
+            
         }
 
         /// <summary>
@@ -103,157 +143,300 @@ namespace BlazorFluentUI
         /// </summary>
         /// <param name="item"></param>
         /// <param name="asSingle">On click, force list to select one even if set to multiple</param>
-        public void SelectItem(TItem item, bool asSingle=false)
+        //public void SelectItem(TItem item, bool asSingle=false)
+        //{
+        //    bool hasChanged = false;
+        //    if (SelectionMode == SelectionMode.Multiple && !asSingle)
+        //    {
+        //        hasChanged = true;
+        //        if (selectedIndices.Contains(item))
+        //            selectedIndices.Remove(item);
+        //        else
+        //            selectedIndices.Add(item);
+        //    }
+        //    else if (SelectionMode == SelectionMode.Multiple && asSingle)
+        //    {
+        //        //same as single except we need to clear other items if they are selected, too
+        //        hasChanged = true;
+        //        selectedIndices.Clear();
+        //        selectedIndices.Add(item);
+        //    }
+        //    else if (SelectionMode == SelectionMode.Single)
+        //    {
+        //        if (!selectedIndices.Contains(item))
+        //        {
+        //            hasChanged = true;
+        //            selectedIndices.Clear();
+        //            selectedIndices.Add(item);
+        //        }
+        //    }
+
+        //    if (hasChanged)
+        //    {
+        //        doNotRenderOnce = true;
+        //        selectedIndicesSubject.OnNext(selectedIndices);
+        //        SelectionChanged.InvokeAsync(new Selection<TItem>(selectedIndices));
+        //    }
+        //}
+        public void SelectIndex(int index, bool asSingle = false)
         {
             bool hasChanged = false;
             if (SelectionMode == SelectionMode.Multiple && !asSingle)
             {
                 hasChanged = true;
-                if (selectedItems.Contains(item))
-                    selectedItems.Remove(item);
+                if (selectedIndices.Contains(index))
+                    selectedIndices.Remove(index);
                 else
-                    selectedItems.Add(item);
+                    selectedIndices.Add(index);
             }
             else if (SelectionMode == SelectionMode.Multiple && asSingle)
             {
                 //same as single except we need to clear other items if they are selected, too
                 hasChanged = true;
-                selectedItems.Clear();
-                selectedItems.Add(item);
+                selectedIndices.Clear();
+                selectedIndices.Add(index);
             }
             else if (SelectionMode == SelectionMode.Single)
             {
-                if (!selectedItems.Contains(item))
+                if (!selectedIndices.Contains(index))
                 {
                     hasChanged = true;
-                    selectedItems.Clear();
-                    selectedItems.Add(item);
+                    selectedIndices.Clear();
+                    selectedIndices.Add(index);
                 }
             }
 
             if (hasChanged)
             {
                 doNotRenderOnce = true;
-                selectedItemsSubject.OnNext(selectedItems);
-                SelectionChanged.InvokeAsync(new Selection<TItem>(selectedItems));
+                selectedIndicesSubject.OnNext(selectedIndices);
+                SelectionChanged.InvokeAsync(new Selection<TItem>(selectedIndices));
             }
         }
 
-        public void AddItems(IEnumerable<TItem> items)
+        //public void AddItems(IEnumerable<TItem> items)
+        //{
+        //    foreach (var item in items)
+        //    {
+        //        if (!selectedIndices.Contains(item))
+        //            selectedIndices.Add(item);
+        //    }
+
+        //    if (items != null && items.Count() > 0)
+        //    {
+        //        doNotRenderOnce = true;
+        //        selectedIndicesSubject.OnNext(selectedIndices);
+        //        SelectionChanged.InvokeAsync(new Selection<TItem>(selectedIndices));
+        //    }
+        //}
+        public void AddIndices(IEnumerable<int> indices)
         {
-            foreach (var item in items)
+            foreach (var index in indices)
             {
-                if (!selectedItems.Contains(item))
-                    selectedItems.Add(item);
+                if (!selectedIndices.Contains(index))
+                    selectedIndices.Add(index);
             }
 
-            if (items != null && items.Count() > 0)
+            if (indices != null && indices.Count() > 0)
             {
                 doNotRenderOnce = true;
-                selectedItemsSubject.OnNext(selectedItems);
-                SelectionChanged.InvokeAsync(new Selection<TItem>(selectedItems));
+                selectedIndicesSubject.OnNext(selectedIndices);
+                SelectionChanged.InvokeAsync(new Selection<TItem>(selectedIndices));
             }
         }
-                
-        public void RemoveItems(IEnumerable<TItem> items)
+
+        //public void RemoveItems(IEnumerable<TItem> items)
+        //{
+        //    foreach (var item in items)
+        //    {
+        //        selectedIndices.Remove(item);
+        //    }
+
+        //    if (items != null && items.Count() > 0)
+        //    {
+        //        doNotRenderOnce = true;
+        //        selectedIndicesSubject.OnNext(selectedIndices);
+        //        SelectionChanged.InvokeAsync(new Selection<TItem>(selectedIndices));
+        //    }
+        //}
+        public void RemoveIndices(IEnumerable<int> indices)
         {
-            foreach (var item in items)
+            foreach (var index in indices)
             {
-                selectedItems.Remove(item);
+                selectedIndices.Remove(index);
             }
 
-            if (items != null && items.Count() > 0)
+            if (indices != null && indices.Count() > 0)
             {
                 doNotRenderOnce = true;
-                selectedItemsSubject.OnNext(selectedItems);
-                SelectionChanged.InvokeAsync(new Selection<TItem>(selectedItems));
+                selectedIndicesSubject.OnNext(selectedIndices);
+                SelectionChanged.InvokeAsync(new Selection<TItem>(selectedIndices));
             }
         }
 
-        public void AddAndRemoveItems(IEnumerable<TItem> itemsToAdd, IEnumerable<TItem> itemsToRemove)
+        //public void AddAndRemoveItems(IEnumerable<TItem> itemsToAdd, IEnumerable<TItem> itemsToRemove)
+        //{
+        //    foreach (var item in itemsToAdd)
+        //    {
+        //        if (!selectedIndices.Contains(item))
+        //            selectedIndices.Add(item);
+        //    }
+        //    foreach (var item in itemsToRemove)
+        //    {
+        //        selectedIndices.Remove(item);
+        //    }
+
+        //    if ((itemsToAdd != null && itemsToAdd.Count() > 0) || (itemsToRemove != null && itemsToRemove.Count() > 0))
+        //    {
+        //        doNotRenderOnce = true;
+        //        selectedIndicesSubject.OnNext(selectedIndices);
+        //        SelectionChanged.InvokeAsync(new Selection<TItem>(selectedIndices));
+        //    }
+        //}
+        public void AddAndRemoveIndices(IEnumerable<int> indicesToAdd, IEnumerable<int> indicesToRemove)
         {
-            foreach (var item in itemsToAdd)
+            foreach (var index in indicesToAdd)
             {
-                if (!selectedItems.Contains(item))
-                    selectedItems.Add(item);
+                if (!selectedIndices.Contains(index))
+                    selectedIndices.Add(index);
             }
-            foreach (var item in itemsToRemove)
+            foreach (var index in indicesToRemove)
             {
-                selectedItems.Remove(item);
+                selectedIndices.Remove(index);
             }
 
-            if ((itemsToAdd != null && itemsToAdd.Count() > 0) || (itemsToRemove != null && itemsToRemove.Count() > 0))
+            if ((indicesToAdd != null && indicesToAdd.Count() > 0) || (indicesToRemove != null && indicesToRemove.Count() > 0))
             {
                 doNotRenderOnce = true;
-                selectedItemsSubject.OnNext(selectedItems);
-                SelectionChanged.InvokeAsync(new Selection<TItem>(selectedItems));
+                selectedIndicesSubject.OnNext(selectedIndices);
+                SelectionChanged.InvokeAsync(new Selection<TItem>(selectedIndices));
             }
         }
 
-        
 
         public void ClearSelection()
         {
-            if (selectedItems.Count>0)
+            if (selectedIndices.Count>0)
             {
-                selectedItems.Clear();
+                selectedIndices.Clear();
                 doNotRenderOnce = true;
-                selectedItemsSubject.OnNext(selectedItems);
-                SelectionChanged.InvokeAsync(new Selection<TItem>(selectedItems));
+                selectedIndicesSubject.OnNext(selectedIndices);
+                SelectionChanged.InvokeAsync(new Selection<TItem>(selectedIndices));
             }
         }
 
         // For end-users to let SelectionMode handle what to do.
-        public void HandleClick(TItem item)
+        //public void HandleClick(TItem item)
+        //{
+        //    bool hasChanged = false;
+        //    if (SelectionMode == SelectionMode.Multiple)
+        //    {
+        //        hasChanged = true;
+        //        if (selectedIndices.Contains(item))
+        //            selectedIndices.Remove(item);
+        //        else
+        //            selectedIndices.Add(item);
+        //    }
+        //    else if (SelectionMode == SelectionMode.Single )
+        //    {
+        //        if (!selectedIndices.Contains(item))
+        //        {
+        //            hasChanged = true;
+        //            selectedIndices.Clear();
+        //            selectedIndices.Add(item);
+        //        }
+        //    }
+
+        //    if (hasChanged)
+        //    {
+        //        doNotRenderOnce = true;
+        //        selectedIndicesSubject.OnNext(selectedIndices);
+        //        SelectionChanged.InvokeAsync(new Selection<TItem>(selectedIndices));
+        //    }
+        //}
+        public void HandleClick(int index)
         {
             bool hasChanged = false;
             if (SelectionMode == SelectionMode.Multiple)
             {
                 hasChanged = true;
-                if (selectedItems.Contains(item))
-                    selectedItems.Remove(item);
+                if (selectedIndices.Contains(index))
+                    selectedIndices.Remove(index);
                 else
-                    selectedItems.Add(item);
+                    selectedIndices.Add(index);
             }
-            else if (SelectionMode == SelectionMode.Single )
+            else if (SelectionMode == SelectionMode.Single)
             {
-                if (!selectedItems.Contains(item))
+                if (!selectedIndices.Contains(index))
                 {
                     hasChanged = true;
-                    selectedItems.Clear();
-                    selectedItems.Add(item);
+                    selectedIndices.Clear();
+                    selectedIndices.Add(index);
                 }
             }
 
             if (hasChanged)
             {
                 doNotRenderOnce = true;
-                selectedItemsSubject.OnNext(selectedItems);
-                SelectionChanged.InvokeAsync(new Selection<TItem>(selectedItems));
+                selectedIndicesSubject.OnNext(selectedIndices);
+                SelectionChanged.InvokeAsync(new Selection<TItem>(selectedIndices));
             }
         }
 
         // For end-users to let SelectionMode handle what to do.
-        public void HandleToggle(TItem item)
+        //public void HandleToggle(TItem item)
+        //{
+        //    bool hasChanged = false;
+        //    switch (SelectionMode)
+        //    {
+        //        case SelectionMode.Multiple:
+        //            hasChanged = true;
+        //            if (selectedIndices.Contains(item))
+        //                selectedIndices.Remove(item);
+        //            else
+        //                selectedIndices.Add(item);
+        //            break;
+        //        case SelectionMode.Single:
+        //            hasChanged = true;
+        //            if (selectedIndices.Contains(item))
+        //                selectedIndices.Remove(item);
+        //            else
+        //            {
+        //                selectedIndices.Clear();
+        //                selectedIndices.Add(item);
+        //            }
+        //            break;
+        //        case SelectionMode.None:
+        //            break;
+        //    }
+
+        //    if (hasChanged)
+        //    {
+        //        doNotRenderOnce = true;
+        //        selectedIndicesSubject.OnNext(selectedIndices);
+        //        SelectionChanged.InvokeAsync(new Selection<TItem>(selectedIndices));
+        //    }
+        //}
+        public void HandleToggle(int index)
         {
             bool hasChanged = false;
             switch (SelectionMode)
             {
                 case SelectionMode.Multiple:
                     hasChanged = true;
-                    if (selectedItems.Contains(item))
-                        selectedItems.Remove(item);
+                    if (selectedIndices.Contains(index))
+                        selectedIndices.Remove(index);
                     else
-                        selectedItems.Add(item);
+                        selectedIndices.Add(index);
                     break;
                 case SelectionMode.Single:
                     hasChanged = true;
-                    if (selectedItems.Contains(item))
-                        selectedItems.Remove(item);
+                    if (selectedIndices.Contains(index))
+                        selectedIndices.Remove(index);
                     else
                     {
-                        selectedItems.Clear();
-                        selectedItems.Add(item);
+                        selectedIndices.Clear();
+                        selectedIndices.Add(index);
                     }
                     break;
                 case SelectionMode.None:
@@ -263,55 +446,12 @@ namespace BlazorFluentUI
             if (hasChanged)
             {
                 doNotRenderOnce = true;
-                selectedItemsSubject.OnNext(selectedItems);
-                SelectionChanged.InvokeAsync(new Selection<TItem>(selectedItems));
+                selectedIndicesSubject.OnNext(selectedIndices);
+                SelectionChanged.InvokeAsync(new Selection<TItem>(selectedIndices));
             }
         }
 
 
-        //private void OnSelectedChanged(Selection<GroupedListItem<TItem>> selection)
-        //{
-        //    List<string> s = new List<string>();
-
-        //    var finalList = new System.Collections.Generic.List<GroupedListItem<TItem>>(selection.SelectedItems);
-
-        //    var itemsToAdd = selection.SelectedItems.Except(internalSelection.SelectedItems).ToList();
-        //    var itemsToRemove = internalSelection.SelectedItems.Except(selection.SelectedItems).ToList();
-        //    itemsToRemove.ForEach(x =>
-        //    {
-        //        var remove = GetChildrenRecursive(x);
-        //        finalList.Remove(remove);
-        //    });
-
-        //    itemsToAdd.ForEach(x =>
-        //    {
-        //        var add = GetChildrenRecursive(x);
-        //        finalList.Add(add);
-        //    });
-
-        //    //check to see if a header needs to be turned OFF because all of its children are *not* selected.
-        //    restart:
-        //    var headers = finalList.Where(x => x is HeaderItem<TItem>).Cast<HeaderItem<TItem>>().ToList();
-        //    foreach (var header in headers)
-        //    {
-        //        if (header.Children.Except(finalList).Count() > 0)
-        //        {
-        //            finalList.Remove(header);
-        //            //start loop over again, simplest way to start over is a goto statement.  This is needed when a header turns off, but it's parent needs to turn off, too.
-        //            goto restart;
-        //        }
-        //    }
-
-        //    //check to see if a header needs to be turned ON because all of its children *are* selected.
-        //    var potentialHeaders = finalList.Select(x => x.Parent).Where(x => x != null).Distinct().ToList();
-        //    foreach (var header in potentialHeaders)
-        //    {
-        //        if (header.Children.Except(finalList).Count() == 0)
-        //            finalList.Add(header);
-        //    }
-
-        //    SelectionChanged.InvokeAsync(new BFUSelection<TItem>(finalList.Select(x => x.Item)));
-        //}
 
     }
 }

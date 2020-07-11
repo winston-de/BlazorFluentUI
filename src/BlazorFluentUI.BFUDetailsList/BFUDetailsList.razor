@@ -1,6 +1,7 @@
 ﻿@namespace BlazorFluentUI
 @inherits BFUComponentBase
 @typeparam TItem
+@using System.Linq
 
 <div class=@($"ms-DetailsList {ClassName}")
      style=@($"overflow-y:hidden;height:100%;{Style}")
@@ -66,10 +67,11 @@
                                     }
                                     else
                                     {
-                                        <BFUDetailsRow Item=@context
+                                        <BFUDetailsRow Item=@context.Item
+                                                       ItemIndex=@context.Index
                                                     Columns=@_adjustedColumns
                                                     SelectionMode=@SelectionMode
-
+                                                    
                                                     Compact=@Compact
                                                     CheckboxVisibility=@CheckboxVisibility />
                                     }
@@ -86,7 +88,8 @@
                                          IsVirtualizing=@IsVirtualizing
                                          SelectionMode=@(CheckboxVisibility != CheckboxVisibility.Hidden ? SelectionMode : SelectionMode.None)>
                                 <ItemTemplate>
-                                    <BFUDetailsRow Item=@context.Item
+                                    <BFUDetailsRow Item=@context.Item.Item
+                                                   ItemIndex=@context.Index
                                                 Columns=@_adjustedColumns
                                                 SelectionMode=@(CheckboxVisibility != CheckboxVisibility.Hidden ? SelectionMode : SelectionMode.None)
                                                 
@@ -111,7 +114,8 @@
                                 }
                                 else
                                 {
-                                    <BFUDetailsRow Item=@context
+                                    <BFUDetailsRow Item=@context.Item
+                                                   ItemIndex=@context.Index
                                                    TItem="TItem"
                                                 Columns=@_adjustedColumns
                                                 SelectionMode=@SelectionMode
@@ -132,7 +136,7 @@
                                      Selection=@Selection
                                      SelectionMode=@(CheckboxVisibility != CheckboxVisibility.Hidden ? SelectionMode : SelectionMode.None)>
                             <ItemTemplate>
-                                <BFUDetailsRow Item=@context.Item
+                                <BFUDetailsRow Item=@context.Item.Item
                                             ItemIndex=@context.Index
                                             Columns=@_adjustedColumns
                                             SelectionMode=@(CheckboxVisibility != CheckboxVisibility.Hidden ? SelectionMode : SelectionMode.None)

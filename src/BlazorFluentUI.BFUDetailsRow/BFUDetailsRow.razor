@@ -12,16 +12,17 @@
                ClassName=@($"fadeIn400 {(Compact ? "is-compact " : "")}{(isSelected ? "is-selected " : "")}{(IsRowHeader ? "is-row-header " : "")}{(IsCheckVisible ? "is-check-visible " : "")}ms-DetailsRow")
                AllowFocusRoot="true"
                IsFocusable="true"
-               OnClick=@(args=> SelectionZone.SelectItem(Item,true))
+               OnClick=@(args=> SelectionZone.SelectIndex(ItemIndex,true))
+                  data-is-selected=@isSelected
                   >
 
         @if (showCheckbox)
         {
             <div role="gridcell"
                  aria-colindex="1"
-                 data-selection-toggle="true"
+                 data-selection-toggle="true"                 
                  class="ms-DetailsRow-checkCell"
-                 @onclick="args => SelectionZone.HandleToggle(Item)"
+                 @onclick="args => SelectionZone.HandleToggle(ItemIndex)"
                  @onclick:stopPropagation="true">
                 <BFUDetailsRowCheck IsVisible=@(this.CheckboxVisibility == CheckboxVisibility.Always)
                                  Compact=@Compact

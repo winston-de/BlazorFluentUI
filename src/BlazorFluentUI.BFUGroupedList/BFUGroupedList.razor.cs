@@ -38,22 +38,22 @@ namespace BlazorFluentUI
         public bool Compact { get; set; }
 
         [Parameter]
-        public Func<TItem, string> GroupTitleSelector { get; set; }
+        public Func<TItem, string>? GroupTitleSelector { get; set; }
 
         [Parameter]
         public bool IsVirtualizing { get; set; } = true;
 
         [Parameter]
-        public Func<TItem, MouseEventArgs, Task> ItemClicked { get; set; }
+        public Func<TItem, MouseEventArgs, Task>? ItemClicked { get; set; }
 
         [Parameter]
-        public IEnumerable<TItem> ItemsSource { get; set; }
+        public IEnumerable<TItem>? ItemsSource { get; set; }
 
         //[Parameter]
         //public TItem RootGroup { get; set; }
 
         [Parameter]
-        public RenderFragment<GroupedListItem<TItem>> ItemTemplate { get; set; }
+        public RenderFragment<IndexedItem<GroupedListItem<TItem>>>? ItemTemplate { get; set; }
 
         [Parameter]
         public EventCallback<bool> OnGroupExpandedChanged { get; set; }
@@ -80,45 +80,134 @@ namespace BlazorFluentUI
             return base.OnInitializedAsync();
         }
 
-        private void OnHeaderClicked(HeaderItem<TItem> headerItem)
+        public void ToggleSelectAll()
+        {
+            if (SelectionZone.GetSelectedIndices().Count() != this.dataItems.Count())
+            {
+                //selectionZone.AddItems(ItemsSource);
+                var list = new List<int>();
+                for (var i = 0; i < ItemsSource.Count(); i++)
+                {
+                    list.Add(i);
+                }
+                SelectionZone.AddIndices(list);
+            }
+            else
+            {
+                SelectionZone.ClearSelection();
+            }
+        }
+
+        public bool ShouldAllBeSelected()
+        {
+            return SelectionZone.Selection.SelectedIndices.Count() == dataItems.Count() && dataItems.Any();
+        }
+
+
+
+        private void OnHeaderClicked(IndexedItem<GroupedListItem<TItem>> indexedItem)
         {
             if (SelectionZone != null)
             {
                 // Doesn't seem to be any difference in the behavior for clicking the Header vs the checkmark in the header.
                 //does selection contain this item already?
-                if (SelectionZone.Selection.SelectedItems.Contains(headerItem.Item))
+                if (SelectionZone.Selection.SelectedIndices.Contains(indexedItem.Index))
                 {
+                    var listToDeselect = new List<int>();
+                    //deselect it and all possible children
+                    listToDeselect.Add(indexedItem.Index);
+                    if (dataItems.Count - 1 > indexedItem.Index)  // there are more items to check
+                    {
+                        for (var i = indexedItem.Index + 1; i < dataItems.Count; i++)
+                        {
+                            if (dataItems[i].Depth > indexedItem.Item.Depth)
+                            {
+                                listToDeselect.Add(i);
+                            }
+                            else
+                                break;
+                        }
+                    }
+                    SelectionZone.RemoveIndices(listToDeselect);
                     //deselect it and all children
-                    var items = SubGroupSelector(headerItem.Item)?.RecursiveSelect<TItem, TItem>(r => SubGroupSelector(r), i => i).Append(headerItem.Item);
-                    SelectionZone.RemoveItems(items);
+                    //var items = SubGroupSelector(headerItem.Item)?.RecursiveSelect<TItem, TItem>(r => SubGroupSelector(r), i => i).Append(headerItem.Item);
+                    //SelectionZone.RemoveItems(items);
                 }
                 else
                 {
+                    var listToSelect = new List<int>();
+                    //select it and all possible children
+                    listToSelect.Add(indexedItem.Index);
+                    if (dataItems.Count - 1 > indexedItem.Index)  // there are more items to check
+                    {
+                        for (var i = indexedItem.Index + 1; i < dataItems.Count; i++)
+                        {
+                            if (dataItems[i].Depth > indexedItem.Item.Depth)
+                            {
+                                listToSelect.Add(i);
+                            }
+                            else
+                                break;
+                        }
+                    }
+                    SelectionZone.AddIndices(listToSelect);
                     //select it and all children
-                    var items = SubGroupSelector(headerItem.Item)?.RecursiveSelect<TItem, TItem>(r => SubGroupSelector(r), i => i).Append(headerItem.Item);
-                    SelectionZone.AddItems(items);
+                    //var items = SubGroupSelector(headerItem.Item)?.RecursiveSelect<TItem, TItem>(r => SubGroupSelector(r), i => i).Append(headerItem.Item);
+                    //SelectionZone.AddItems(items);
                 }
             }
         }
 
-        private void OnHeaderToggled(HeaderItem<TItem> headerItem)
+        private void OnHeaderToggled(IndexedItem<GroupedListItem<TItem>> indexedItem)
         {
             if (SelectionZone != null)
             {
                 // Doesn't seem to be any difference in the behavior for clicking the Header vs the checkmark in the header.
                 //does selection contain this item already?
-                if (SelectionZone.Selection.SelectedItems.Contains(headerItem.Item))
+                if (SelectionZone.Selection.SelectedIndices.Contains(indexedItem.Index))
                 {
+                    var listToDeselect = new List<int>();
+                    //deselect it and all possible children
+                    listToDeselect.Add(indexedItem.Index);
+                    if (dataItems.Count - 1 > indexedItem.Index)  // there are more items to check
+                    {
+                        for (var i = indexedItem.Index + 1; i < dataItems.Count; i++)
+                        {
+                            if (dataItems[i].Depth > indexedItem.Item.Depth)
+                            {
+                                listToDeselect.Add(i);
+                            }
+                            else
+                                break;
+                        }
+                    }
+                    SelectionZone.RemoveIndices(listToDeselect);
                     //deselect it and all children
-                    var items = SubGroupSelector(headerItem.Item)?.RecursiveSelect<TItem, TItem>(r => SubGroupSelector(r), i => i).Append(headerItem.Item);
+                    //var items = SubGroupSelector(headerItem.Item)?.RecursiveSelect<TItem, TItem>(r => SubGroupSelector(r), i => i).Append(headerItem.Item);
 
-                    SelectionZone.RemoveItems(items);
+                    //SelectionZone.RemoveItems(items);
                 }
                 else
                 {
+                    var listToSelect = new List<int>();
+                    //select it and all possible children
+                    listToSelect.Add(indexedItem.Index);
+                    if (dataItems.Count - 1 > indexedItem.Index)  // there are more items to check
+                    {
+                        for (var i = indexedItem.Index + 1; i < dataItems.Count; i++)
+                        {
+                            if (dataItems[i].Depth > indexedItem.Item.Depth)
+                            {
+                                listToSelect.Add(i);
+                            }
+                            else
+                                break;
+                        }
+                    }
+                    SelectionZone.AddIndices(listToSelect);
                     //select it and all children
-                    var items = SubGroupSelector(headerItem.Item)?.RecursiveSelect<TItem, TItem>(r => SubGroupSelector(r), i => i).Append(headerItem.Item);
-                    SelectionZone.AddItems(items);
+                    //var items = SubGroupSelector(headerItem.Item)?.RecursiveSelect<TItem, TItem>(r => SubGroupSelector(r), i => i).Append(headerItem.Item);
+                    //SelectionZone.AddItems(items);
                 }
             }
         }

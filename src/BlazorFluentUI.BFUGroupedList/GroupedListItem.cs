@@ -41,7 +41,7 @@ namespace BlazorFluentUI
         }
     }
 
-    public class GroupedListItem<TItem>
+    public class GroupedListItem<TItem> : IGroupedListItem<TItem>
     {
         private BehaviorSubject<bool> _isVisibleSubject;
         public IObservable<bool> IsVisibleObservable => _isVisibleSubject.AsObservable();
@@ -65,8 +65,8 @@ namespace BlazorFluentUI
         public System.Collections.Generic.List<GroupedListItem<TItem>> Children { get; set; } = new System.Collections.Generic.List<GroupedListItem<TItem>>();
 
         public int RecursiveCount => Children.RecursiveCount();
-        
-        
+
+
 
         private static string GetGroupItemKey(GroupedListItem<TItem> groupedListItem)
         {

@@ -22,10 +22,11 @@
                                 
                                 SelectionMode=@SelectionMode.Multiple>
                     <ItemTemplate>
-                        <BFUDetailsRow Item=@context.Item
+                        <BFUDetailsRow Item=@context.Item.Item
+                                       ItemIndex=@context.Index
                                        Columns=@columns
                                        Compact=@isCompact
-                                       GroupNestingDepth=@context.Depth
+                                       GroupNestingDepth=@context.Item.Depth
                                        SelectionMode=@SelectionMode.Multiple />
                     </ItemTemplate>
                 </BFUGroupedList>

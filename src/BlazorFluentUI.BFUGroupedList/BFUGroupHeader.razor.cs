@@ -54,6 +54,9 @@ namespace BlazorFluentUI
         [Parameter]
         public SelectionMode SelectionMode { get; set; } = SelectionMode.Single;
 
+        [Parameter]
+        public int ListIndex { get; set; }
+
         [CascadingParameter]
         private BFUSelectionZone<object> SelectionZone { get; set; }
 

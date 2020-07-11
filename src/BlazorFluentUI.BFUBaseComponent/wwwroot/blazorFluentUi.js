@@ -2258,7 +2258,7 @@ var BlazorFluentUiList;
             let averageHeight = 0;
             for (let i = 0; i < this.scrollElement.children.length; i++) {
                 let item = this.scrollElement.children.item(i);
-                let index = item.getAttribute("data-hash");
+                let index = item.getAttribute("data-item-index");
                 if (index != null && !this.cachedSizes.has(index) && this.cachedSizes.get(index) != item.clientHeight) {
                     this.cachedSizes.set(index, item.clientHeight);
                     calculate = true;
