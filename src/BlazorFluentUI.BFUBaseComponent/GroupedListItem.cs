@@ -1,5 +1,4 @@
-﻿using DynamicData;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
@@ -41,7 +40,7 @@ namespace BlazorFluentUI
         }
     }
 
-    public class GroupedListItem<TItem> : IGroupedListItem<TItem>
+    public class GroupedListItem<TItem>
     {
         private BehaviorSubject<bool> _isVisibleSubject;
         public IObservable<bool> IsVisibleObservable => _isVisibleSubject.AsObservable();

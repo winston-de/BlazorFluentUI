@@ -1,4 +1,4 @@
-﻿@page "/detailsListGroupedPage"
+﻿@*@page "/detailsListGroupedPage"
 
 @using DynamicData
 @using DynamicData.Binding
@@ -125,7 +125,7 @@
             columnsSource.AddOrUpdate(copyList);
         }
         dataContainer.Descending = column.IsSortedDescending;
-        dataContainer.SortSelector = column.FieldSelector;
+        //dataContainer.SortSelector = column.FieldSelector;
 
         detailsList?.ForceUpdate();  //needed because GroupedList uses a transformed version of ItemsSource that doesn't update automatically.
 
@@ -142,4 +142,4 @@
     }
 
 
-}
+}*@

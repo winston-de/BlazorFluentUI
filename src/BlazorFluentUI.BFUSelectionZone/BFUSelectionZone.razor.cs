@@ -1,11 +1,13 @@
 ﻿using Microsoft.AspNetCore.Components;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Reactive.Linq;
 using System.Reactive.Subjects;
 using System.Text;
 using System.Threading.Tasks;
+
 
 namespace BlazorFluentUI
 {
@@ -45,19 +47,21 @@ namespace BlazorFluentUI
         public bool SelectionPreservedOnEmptyClick { get; set; }
 
 
-        private IEnumerable<TItem>? itemsSource;  //need to assume this iteration of ItemsSource has temporary order.
+        private IEnumerable<TItem>? _itemsSource;  //need to assume this iteration of ItemsSource has temporary order.
+        private IEnumerable<GroupedListItem<TItem>>? _groupedItemsSource;  //need to assume this iteration of ItemsSource has temporary order.
         //private Dictionary<Guid, TItem> dic;
         //private HashSet<Guid> selectedKeys;
         private HashSet<int> selectedIndices;// = new HashSet<TItem>();
 
-        private BehaviorSubject<ICollection<int>> selectedIndicesSubject;
-        
-        public IObservable<ICollection<int>> SelectedIndicesObservable { get; private set; }
+        //private BehaviorSubject<ICollection<int>> selectedIndicesSubject;
+
+        public IObservable<ICollection<int>> SelectedIndicesObservable => Selection.SelectedIndicesObservable; //{ get; private set; }
 
         private bool doNotRenderOnce = false;
 
         protected override bool ShouldRender()
         {
+            Debug.WriteLine("SelectionZone Should render called");
             if (doNotRenderOnce && DisableRenderOnSelectionChanged)
             {
                 doNotRenderOnce = false;
@@ -75,8 +79,8 @@ namespace BlazorFluentUI
             //dic = new Dictionary<Guid, TItem>();
             //selectedKeys = new HashSet<Guid>();
             selectedIndices = new HashSet<int>();
-            selectedIndicesSubject = new BehaviorSubject<ICollection<int>>(selectedIndices);
-            SelectedIndicesObservable = selectedIndicesSubject.AsObservable();
+            //selectedIndicesSubject = new BehaviorSubject<ICollection<int>>(selectedIndices);
+            //SelectedIndicesObservable = selectedIndicesSubject.AsObservable();
         }
 
         //protected override void OnInitialized()
@@ -87,12 +91,7 @@ namespace BlazorFluentUI
         //}
 
         protected override async Task OnParametersSetAsync()
-        {
-            //if (ItemsSource != itemsSource)
-            //{
-            //    itemsSource = ItemsSource;
-            //}
-
+        {           
             if (Selection != null && Selection.SelectedIndices != selectedIndices)
             {
                 selectedIndices = new System.Collections.Generic.HashSet<int>(Selection.SelectedIndices);
@@ -104,16 +103,24 @@ namespace BlazorFluentUI
             {
                 selectedIndices.Clear();
                 //selectedItemsSubject.OnNext(selectedItems);
-                await SelectionChanged.InvokeAsync(new Selection<TItem>(selectedIndices));
+                Selection?.SetSelectedIndices(selectedIndices);
+                await SelectionChanged.InvokeAsync(Selection);
             }
             else if (SelectionMode == SelectionMode.None && selectedIndices.Count() > 0)
             {
                 selectedIndices.Clear();
                 //selectedItemsSubject.OnNext(selectedItems);
-                await SelectionChanged.InvokeAsync(new Selection<TItem>(selectedIndices));
+                Selection?.SetSelectedIndices(selectedIndices);
+                await SelectionChanged.InvokeAsync(Selection);
             }
             await base.OnParametersSetAsync();
         }
+
+        protected override Task OnAfterRenderAsync(bool firstRender)
+        {
+            return base.OnAfterRenderAsync(firstRender);
+        }
+
 
         //private void CreateKeys()
         //{
@@ -129,14 +136,37 @@ namespace BlazorFluentUI
 
         public TItem GetItemAtIndex(int index)
         {
-            return itemsSource.ElementAt(index);
+            return _itemsSource.ElementAt(index);
         }
 
         public IEnumerable<int> GetSelectedIndices()
         {
-            return Selection?.SelectedIndices;
+            if (Selection == null)
+                return new List<int>();
+            return Selection.SelectedIndices;
             
         }
+
+        public void SetItemsSource(IEnumerable<TItem> itemsSource)
+        {
+            if (_itemsSource != itemsSource)
+            {
+                
+                _itemsSource = itemsSource;
+                Selection.SetItems(_itemsSource);
+            }
+        }
+
+        public void SetGroupedItemsSource(IEnumerable<GroupedListItem<TItem>> groupedItemsSource)
+        {
+            if (_groupedItemsSource != groupedItemsSource)
+            {
+
+                _groupedItemsSource = groupedItemsSource;
+                Selection.SetGroupedItems(_groupedItemsSource);
+            }
+        }
+
 
         /// <summary>
         /// For DetailsRow
@@ -209,8 +239,8 @@ namespace BlazorFluentUI
             if (hasChanged)
             {
                 doNotRenderOnce = true;
-                selectedIndicesSubject.OnNext(selectedIndices);
-                SelectionChanged.InvokeAsync(new Selection<TItem>(selectedIndices));
+                //selectedIndicesSubject.OnNext(selectedIndices);
+                SelectionChanged.InvokeAsync(Selection.SetSelectedIndices(selectedIndices));
             }
         }
 
@@ -240,8 +270,8 @@ namespace BlazorFluentUI
             if (indices != null && indices.Count() > 0)
             {
                 doNotRenderOnce = true;
-                selectedIndicesSubject.OnNext(selectedIndices);
-                SelectionChanged.InvokeAsync(new Selection<TItem>(selectedIndices));
+                //selectedIndicesSubject.OnNext(selectedIndices);
+                SelectionChanged.InvokeAsync(Selection.SetSelectedIndices(selectedIndices));
             }
         }
 
@@ -269,8 +299,8 @@ namespace BlazorFluentUI
             if (indices != null && indices.Count() > 0)
             {
                 doNotRenderOnce = true;
-                selectedIndicesSubject.OnNext(selectedIndices);
-                SelectionChanged.InvokeAsync(new Selection<TItem>(selectedIndices));
+                //selectedIndicesSubject.OnNext(selectedIndices);
+                SelectionChanged.InvokeAsync(Selection.SetSelectedIndices(selectedIndices));
             }
         }
 
@@ -308,8 +338,8 @@ namespace BlazorFluentUI
             if ((indicesToAdd != null && indicesToAdd.Count() > 0) || (indicesToRemove != null && indicesToRemove.Count() > 0))
             {
                 doNotRenderOnce = true;
-                selectedIndicesSubject.OnNext(selectedIndices);
-                SelectionChanged.InvokeAsync(new Selection<TItem>(selectedIndices));
+                //selectedIndicesSubject.OnNext(selectedIndices);
+                SelectionChanged.InvokeAsync(Selection.SetSelectedIndices(selectedIndices));
             }
         }
 
@@ -320,8 +350,8 @@ namespace BlazorFluentUI
             {
                 selectedIndices.Clear();
                 doNotRenderOnce = true;
-                selectedIndicesSubject.OnNext(selectedIndices);
-                SelectionChanged.InvokeAsync(new Selection<TItem>(selectedIndices));
+                //selectedIndicesSubject.OnNext(selectedIndices);
+                SelectionChanged.InvokeAsync(Selection.SetSelectedIndices(selectedIndices));
             }
         }
 
@@ -378,8 +408,8 @@ namespace BlazorFluentUI
             if (hasChanged)
             {
                 doNotRenderOnce = true;
-                selectedIndicesSubject.OnNext(selectedIndices);
-                SelectionChanged.InvokeAsync(new Selection<TItem>(selectedIndices));
+                //selectedIndicesSubject.OnNext(selectedIndices);
+                SelectionChanged.InvokeAsync(Selection.SetSelectedIndices(selectedIndices));
             }
         }
 
@@ -446,8 +476,8 @@ namespace BlazorFluentUI
             if (hasChanged)
             {
                 doNotRenderOnce = true;
-                selectedIndicesSubject.OnNext(selectedIndices);
-                SelectionChanged.InvokeAsync(new Selection<TItem>(selectedIndices));
+                //selectedIndicesSubject.OnNext(selectedIndices);
+                SelectionChanged.InvokeAsync(Selection.SetSelectedIndices(selectedIndices));
             }
         }
 

@@ -24,6 +24,7 @@
                         IsVirtualizing="isVirtualizing"
                         Compact="isCompact"
                         Columns="ReadonlyColumns"
+                        GetKey=@(x=>x.Key)
                         LayoutMode="DetailsListLayoutMode.Justified"
                         @bind-Selection="selection"
                         SelectionMode=@((SelectionMode)Enum.Parse(typeof(SelectionMode), selectedModeOption.Key))
@@ -116,9 +117,9 @@
         selectedModeOption = selectionModeOptions.FirstOrDefault(x => x.Key == "Single");
 
         // We load the column data into the columnsSource SourceCache.
-        columnsSource.AddOrUpdate(new BFUDetailsRowColumn<DataItem>("Key", x => x.KeyNumber) { MaxWidth = 70, Index=0, OnColumnClick = this.OnColumnClick, IsResizable = true });
-        columnsSource.AddOrUpdate(new BFUDetailsRowColumn<DataItem>("Name", x => x.DisplayName) { Index = 1, MaxWidth = 150, OnColumnClick = this.OnColumnClick, IsResizable=true });
-        var descColumn = new BFUDetailsRowColumn<DataItem>("Description", x => x.Description) { Index = 2, OnColumnClick = this.OnColumnClick };
+        columnsSource.AddOrUpdate(new BFUDetailsRowColumn<DataItem,int>("Key", x => x.KeyNumber) { MaxWidth = 70, Index=0, OnColumnClick = this.OnColumnClick, IsResizable = true });
+        columnsSource.AddOrUpdate(new BFUDetailsRowColumn<DataItem, string>("Name", x => x.DisplayName) { Index = 1, MaxWidth = 150, OnColumnClick = this.OnColumnClick, IsResizable=true });
+        var descColumn = new BFUDetailsRowColumn<DataItem, string>("Description", x => x.Description) { Index = 2, OnColumnClick = this.OnColumnClick };
         columnsSource.AddOrUpdate(descColumn);
 
         // We're loading our sample data into the dataSource SourceCache.
@@ -143,7 +144,7 @@
         // based on ReactiveExtensions, we have to Subscribe to it to make it "do stuff".
         dataSource.Connect()
                 .Filter(dataContainer.DynamicDescriptionFilter)
-                .Sort(dataContainer.DynamicSortExpression)
+                //.Sort(dataContainer.DynamicSortExpression)
                 .Bind(out ReadonlyList)
                 .Subscribe();
 
@@ -166,29 +167,29 @@
     // list.
     private void OnColumnClick(BFUDetailsRowColumn<DataItem> column)
     {
-        if (column.IsSorted)
-        {
-            column.IsSortedDescending = !column.IsSortedDescending;
-            dataContainer.Descending = column.IsSortedDescending;
-            dataContainer.SortSelector = column.FieldSelector;
-            columnsSource.AddOrUpdate(column);
-        }
-        else
-        {
-            var copyList = columnsSource.Items.ToList();
-            foreach (var col in copyList)
-            {
-                col.IsSorted = false;
-                if (col == column)
-                {
-                    col.IsSorted = true;
-                    col.IsSortedDescending = false;
-                }
-            }
-            columnsSource.AddOrUpdate(copyList);
-        }
-        dataContainer.Descending = column.IsSortedDescending;
-        dataContainer.SortSelector = column.FieldSelector;
+        //if (column.IsSorted)
+        //{
+        //    column.IsSortedDescending = !column.IsSortedDescending;
+        //    dataContainer.Descending = column.IsSortedDescending;
+        //    //dataContainer.SortSelector = column.FieldSelector;
+        //    columnsSource.AddOrUpdate(column);
+        //}
+        //else
+        //{
+        //    var copyList = columnsSource.Items.ToList();
+        //    foreach (var col in copyList)
+        //    {
+        //        col.IsSorted = false;
+        //        if (col == column)
+        //        {
+        //            col.IsSorted = true;
+        //            col.IsSortedDescending = false;
+        //        }
+        //    }
+        //    columnsSource.AddOrUpdate(copyList);
+        //}
+        //dataContainer.Descending = column.IsSortedDescending;
+        //dataContainer.SortSelector = column.FieldSelector;
 
     }
 

@@ -56,6 +56,9 @@ namespace BlazorFluentUI
         public RenderFragment<IndexedItem<GroupedListItem<TItem>>>? ItemTemplate { get; set; }
 
         [Parameter]
+        public EventCallback<GroupedListCollection<TItem>> OnGeneratedListItems { get; set; }
+
+        [Parameter]
         public EventCallback<bool> OnGroupExpandedChanged { get; set; }
 
         [Parameter]
@@ -85,8 +88,8 @@ namespace BlazorFluentUI
             if (SelectionZone.GetSelectedIndices().Count() != this.dataItems.Count())
             {
                 //selectionZone.AddItems(ItemsSource);
-                var list = new List<int>();
-                for (var i = 0; i < ItemsSource.Count(); i++)
+                var list = new HashSet<int>();
+                for (var i = 0; i < dataItems.Count(); i++)
                 {
                     list.Add(i);
                 }
@@ -259,18 +262,14 @@ namespace BlazorFluentUI
                     _transformedDisposable?.Dispose();
 
                     _itemsSource = ItemsSource;
-                    //_rootGroup = RootGroup;
                     if (_itemsSource != null)
-                    //if (_rootGroup != null)
                     {
-                        //var list = new System.Collections.Generic.List<TItem>();
-                        //list.Add(_rootGroup);
-                        
                         var changeSet = _itemsSource.AsObservableChangeSet();
                         System.Collections.Generic.List<HeaderItem<TItem>> headersList = new System.Collections.Generic.List<HeaderItem<TItem>>();
                         Dictionary<int, int> depthIndex = new Dictionary<int, int>();
 
                         var rootIndex = 0;
+                        
                         var transformedChangeSet = changeSet.TransformMany<GroupedListItem<TItem>, TItem>((x) =>
 
                         {
@@ -304,9 +303,13 @@ namespace BlazorFluentUI
 
                         _transformedDisposable = transformedChangeSet
                             .AutoRefreshOnObservable(x => x.IsVisibleObservable)
-                            .Filter(x => x.IsVisible)
+                            //.Filter(x => x.IsVisible)
                             .Sort(new GroupedListItemComparer<TItem>())
                             .Bind(out dataItems)
+                            .Do(x=> 
+                            {
+                                this.OnGeneratedListItems.InvokeAsync(new GroupedListCollection<TItem> { GroupedListItems = dataItems});
+                                })
                             .Subscribe();
 
                     }

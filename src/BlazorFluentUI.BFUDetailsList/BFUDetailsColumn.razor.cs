@@ -1,6 +1,7 @@
 ﻿using BlazorFluentUI.Style;
 using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Web;
+using System;
 using System.Collections.Generic;
 
 namespace BlazorFluentUI
@@ -56,7 +57,9 @@ namespace BlazorFluentUI
             if (Column.ColumnActionsMode == ColumnActionsMode.Disabled)
                 return;
 
+            OnColumnClick.InvokeAsync(Column);
             Column.OnColumnClick?.Invoke(Column);
+            
         }
 
         public ICollection<IRule> CreateGlobalCss(ITheme theme)

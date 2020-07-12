@@ -20,9 +20,9 @@
 
     protected override void OnInitialized()
     {
-        Columns.Add(new BFUDetailsRowColumn<DataItem>("Key", x => x.KeyNumber) { MaxWidth = 70, Index=0 });
-        Columns.Add(new BFUDetailsRowColumn<DataItem>("Name", x => x.DisplayName) { Index = 1, MaxWidth = 150, OnColumnClick = this.OnColumnClick, IsResizable=true });
-        Columns.Add(new BFUDetailsRowColumn<DataItem>("Description", x => x.Description) { Index = 2 });
+        Columns.Add(new BFUDetailsRowColumn<DataItem, int>("Key", x => x.KeyNumber) { MaxWidth = 70, Index=0 });
+        Columns.Add(new BFUDetailsRowColumn<DataItem, string>("Name", x => x.DisplayName) { Index = 1, MaxWidth = 150, OnColumnClick = this.OnColumnClick, IsResizable=true });
+        Columns.Add(new BFUDetailsRowColumn<DataItem, string>("Description", x => x.Description) { Index = 2 });
 
         int count = 0;
         for (var i = 0; i < 1000; i++)

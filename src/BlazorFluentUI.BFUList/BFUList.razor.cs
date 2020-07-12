@@ -52,20 +52,20 @@ namespace BlazorFluentUI
         private Rectangle surfaceRect = new Rectangle();
         private double _height;
         public double CurrentHeight => _height;
-        
-        
+
+
         private bool _jsAvailable = false;
         private bool _lastIsVirtualizing = true;
 
         //private object _lastVersion = null;
 
-        [Inject] 
+        [Inject]
         private IJSRuntime JSRuntime { get; set; }
 
-        [Parameter] 
+        [Parameter]
         public object Data { get; set; }
 
-        [Parameter] 
+        [Parameter]
         public Func<int, Rectangle, int> GetItemCountForPage { get; set; }
 
         //[Parameter] 
@@ -74,21 +74,20 @@ namespace BlazorFluentUI
         [Parameter]
         public bool IsVirtualizing { get; set; } = true;
 
-        [Parameter] 
+        [Parameter]
         public bool ItemFocusable { get; set; } = false;
 
-        [Parameter] 
+        [Parameter]
         public IEnumerable<TItem> ItemsSource { get; set; }
 
-        [Parameter] 
+        [Parameter]
         public RenderFragment<IndexedItem<TItem>>? ItemTemplate { get; set; }
 
-        [Parameter] 
+        [Parameter]
         public EventCallback<(double, object)> OnListScrollerHeightChanged { get; set; }
 
         [Parameter]
         public EventCallback<Viewport> OnViewportChanged { get; set; }
-
 
         private IEnumerable<TItem> _itemsSource;
 
@@ -117,6 +116,8 @@ namespace BlazorFluentUI
 
             if (_itemsSource != ItemsSource)
             {
+                
+
                 if (this._itemsSource is System.Collections.Specialized.INotifyCollectionChanged)
                 {
                     (this._itemsSource as System.Collections.Specialized.INotifyCollectionChanged).CollectionChanged -= ListBase_CollectionChanged;
@@ -197,7 +198,8 @@ namespace BlazorFluentUI
         
 
         protected override async Task OnAfterRenderAsync(bool firstRender)
-        {            
+        {
+            Debug.WriteLine("List rendered");
             if (firstRender)
             {
                 _lastIsVirtualizing = IsVirtualizing;

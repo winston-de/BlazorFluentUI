@@ -30,7 +30,10 @@
             }
             else
             {
-                @ItemTemplate(context)
+                @if (context.Item.IsVisible)
+                {
+                    @ItemTemplate(context)
+                }
             }
         </ItemTemplate>
     </BFUList>
