@@ -56,7 +56,7 @@
                                    OnItemContextMenu=@OnItemContextMenu
                                    EnterModalOnTouch=@EnterModalSelectionOnTouch
                                    Style="height:100%;overflow-y:hidden;">
-                        @if (SubGroupSelector == null)
+                        @if (GroupBy == null)
                         {
                             <BFUList ItemsSource=@items
                                      IsVirtualizing=@IsVirtualizing
@@ -69,6 +69,7 @@
                                     else
                                     {
                                         <BFUDetailsRow Item=@context.Item
+                                                       Key=@getKeyInternal(context.Item)
                                                        ItemIndex=@context.Index
                                                     Columns=@_adjustedColumns
                                                     SelectionMode=@SelectionMode
@@ -82,17 +83,20 @@
                         else
                         {
                             <BFUGroupedList ItemsSource=@items
-                                         @ref=@groupedList
-                                         OnViewportChanged=@ViewportChangedHandler
-                                         SubGroupSelector=@SubGroupSelector
-                                         GroupTitleSelector=@GroupTitleSelector
-                                         IsVirtualizing=@IsVirtualizing
+                                            @ref=@groupedList
                                             TItem="TItem"
-                                            OnGeneratedListItems=@(OnGroupedListGeneratedItems)
-                                         SelectionMode=@(CheckboxVisibility != CheckboxVisibility.Hidden ? SelectionMode : SelectionMode.None)>
+                                            GetKey=@getKeyInternal
+                                            GroupBy=@GroupBy
+                                            SortBy=@groupSortSelectors
+                                            SortDescending=@groupSortDescendingList
+                                            OnViewportChanged=@ViewportChangedHandler
+                                            IsVirtualizing=@IsVirtualizing
+                                            SelectionMode=@(CheckboxVisibility != CheckboxVisibility.Hidden ? SelectionMode : SelectionMode.None)>
                                 <ItemTemplate>
-                                    <BFUDetailsRow Item=@context.Item.Item
+                                    <BFUDetailsRow TItem="TItem"
+                                                   Item=@context.Item.Item
                                                    ItemIndex=@context.Index
+                                                   Key=GetKey(context.Item.Item)
                                                 Columns=@_adjustedColumns
                                                 SelectionMode=@(CheckboxVisibility != CheckboxVisibility.Hidden ? SelectionMode : SelectionMode.None)
                                                 
@@ -106,9 +110,10 @@
                 }
                 else
                 {
-                    @if (SubGroupSelector == null)
+                    @if (GroupBy == null)
                     {
                         <BFUList ItemsSource=@items
+                                 TItem="TItem"
                               OnViewportChanged=@ViewportChangedHandler>
                             <ItemTemplate>
                                 @if (RowTemplate != null)
@@ -119,8 +124,9 @@
                                 {
                                     <BFUDetailsRow Item=@context.Item
                                                    ItemIndex=@context.Index
+                                                   Key=getKeyInternal(context.Item)
                                                    TItem="TItem"
-                                                Columns=@_adjustedColumns
+                                                Columns=@_adjustedColumns                                                   
                                                 SelectionMode=@SelectionMode
                                                 Selection=@Selection
                                                 Compact=@Compact
@@ -131,23 +137,26 @@
                     }
                     else
                     {
-                        <BFUGroupedList ItemsSource=@items
+                        @*<BFUGroupedList ItemsSource=@groupedItems
                                      @ref=@groupedList
+                                        GetKey=@getKeyInternal
                                      OnViewportChanged=@ViewportChangedHandler
-                                     SubGroupSelector=@SubGroupSelector
+                                     
                                      GroupTitleSelector=@GroupTitleSelector
                                      Selection=@Selection
                                      SelectionMode=@(CheckboxVisibility != CheckboxVisibility.Hidden ? SelectionMode : SelectionMode.None)>
                             <ItemTemplate>
-                                <BFUDetailsRow Item=@context.Item.Item
+                                <BFUDetailsRow TItem="GroupContainer<TItem>"
+                                               Item=@context.Item.Item
                                             ItemIndex=@context.Index
+                                            Key=context.Item.Key
                                             Columns=@_adjustedColumns
                                             SelectionMode=@(CheckboxVisibility != CheckboxVisibility.Hidden ? SelectionMode : SelectionMode.None)
                                             Selection=@Selection
                                             CheckboxVisibility=@CheckboxVisibility
                                             Compact=@Compact />
                             </ItemTemplate>
-                        </BFUGroupedList>
+                        </BFUGroupedList>*@
                     }
                 }
             </BFUFocusZone>

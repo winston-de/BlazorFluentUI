@@ -5,9 +5,16 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using DynamicData;
+using DynamicData.Binding;
+using DynamicData.Cache;
 using DynamicData.Aggregation;
 using System.Reactive.Linq;
 using System.Collections.ObjectModel;
+using System.ComponentModel;
+using System.Diagnostics;
+using DynamicData.Binding;
+using System.Reactive.Subjects;
+using System.Reactive;
 
 namespace BlazorFluentUI
 {
@@ -15,7 +22,7 @@ namespace BlazorFluentUI
     {
         //private IEnumerable<IGrouping<object, TItem>> groups;
         //private bool _isGrouped;
-        private BFUList<GroupedListItem<TItem>> listReference;
+        private BFUList<GroupedListItem2<TItem>> listReference;
 
         private ReadOnlyObservableCollection<GroupedListItem<TItem>> dataItems;
 
@@ -24,6 +31,7 @@ namespace BlazorFluentUI
         private const double COMPACT_ROW_HEIGHT = 32;
         private const double ROW_HEIGHT = 42;
 
+        private SourceCache<TItem, object> sourceCache;
 
         //private TItem _rootGroup;
         private IEnumerable<TItem> _itemsSource;
@@ -37,8 +45,14 @@ namespace BlazorFluentUI
         [Parameter]
         public bool Compact { get; set; }
 
+        /// <summary>
+        /// GetKey must get a key that can be transformed into a unique string because the key will be written as HTML.  You can leave this null if your ItemsSource implements IList as the index will be used as a key.  
+        /// </summary>
         [Parameter]
-        public Func<TItem, string>? GroupTitleSelector { get; set; }
+        public Func<TItem, object> GetKey { get; set; }
+
+        [Parameter]
+        public IList<Func<TItem, object>>? GroupBy { get; set; }
 
         [Parameter]
         public bool IsVirtualizing { get; set; } = true;
@@ -48,12 +62,12 @@ namespace BlazorFluentUI
 
         [Parameter]
         public IEnumerable<TItem>? ItemsSource { get; set; }
-
+               
         //[Parameter]
         //public TItem RootGroup { get; set; }
 
         [Parameter]
-        public RenderFragment<IndexedItem<GroupedListItem<TItem>>>? ItemTemplate { get; set; }
+        public RenderFragment<IndexedItem<GroupedListItem2<TItem>>>? ItemTemplate { get; set; }
 
         [Parameter]
         public EventCallback<GroupedListCollection<TItem>> OnGeneratedListItems { get; set; }
@@ -74,9 +88,23 @@ namespace BlazorFluentUI
         public SelectionMode SelectionMode { get; set; } = SelectionMode.Single;
 
         [Parameter]
+        public IList<Func<TItem, object>>? SortBy { get; set; } = null;
+
+        [Parameter]
+        public IList<bool>? SortDescending { get; set; } 
+
+        [Parameter]
         public Func<TItem, IEnumerable<TItem>> SubGroupSelector { get; set; }
 
-        
+
+        private Func<TItem, object> getKeyInternal;
+        private IDisposable sourceCacheSubscription;
+        private ReadOnlyObservableCollection<GroupedListItem2<TItem>> groupedUIListItems;
+
+        private IList<bool>? _sortDescending;
+        private IList<Func<TItem, object>>? _sortBy;
+        private BehaviorSubject<SortExpressionComparer<TItem>> sortExpressionComparer = new BehaviorSubject<SortExpressionComparer<TItem>>(new SortExpressionComparer<TItem>());
+        private Subject<Unit> _resorter = new Subject<Unit>();
 
         protected override Task OnInitializedAsync()
         {
@@ -85,15 +113,22 @@ namespace BlazorFluentUI
 
         public void ToggleSelectAll()
         {
-            if (SelectionZone.GetSelectedIndices().Count() != this.dataItems.Count())
+            if (SelectionZone.Selection.SelectedKeys.Count() != this.groupedUIListItems.Count())
             {
                 //selectionZone.AddItems(ItemsSource);
-                var list = new HashSet<int>();
-                for (var i = 0; i < dataItems.Count(); i++)
+                var list = new HashSet<object>();
+                for (var i = 0; i < groupedUIListItems.Count(); i++)
                 {
-                    list.Add(i);
+                    if (groupedUIListItems[i] is HeaderItem<TItem>)
+                    {
+                        list.Add(string.Join(',', groupedUIListItems[i].Children.Select(x=>getKeyInternal(x.Item)).ToArray()));
+                    }
+                    else
+                    {
+                        list.Add(getKeyInternal(groupedUIListItems[i].Item));
+                    }
                 }
-                SelectionZone.AddIndices(list);
+                SelectionZone.AddKeys(list);
             }
             else
             {
@@ -103,57 +138,61 @@ namespace BlazorFluentUI
 
         public bool ShouldAllBeSelected()
         {
-            return SelectionZone.Selection.SelectedIndices.Count() == dataItems.Count() && dataItems.Any();
+            return SelectionZone.Selection.SelectedKeys.Count() == groupedUIListItems.Count() && groupedUIListItems.Any();
         }
 
+        private string GetKeyForHeader(GroupedListItem2<TItem> header)
+        {
+            return string.Join(',', header.Children.Select(x => getKeyInternal(x.Item)).ToArray());
+        }
 
-
-        private void OnHeaderClicked(IndexedItem<GroupedListItem<TItem>> indexedItem)
+        private void OnHeaderClicked(IndexedItem<GroupedListItem2<TItem>> indexedItem)
         {
             if (SelectionZone != null)
             {
                 // Doesn't seem to be any difference in the behavior for clicking the Header vs the checkmark in the header.
                 //does selection contain this item already?
-                if (SelectionZone.Selection.SelectedIndices.Contains(indexedItem.Index))
+                var headerKey = GetKeyForHeader(indexedItem.Item);
+                if (SelectionZone.Selection.SelectedKeys.Contains(headerKey))
                 {
-                    var listToDeselect = new List<int>();
+                    var listToDeselect = new List<object>();
                     //deselect it and all possible children
-                    listToDeselect.Add(indexedItem.Index);
+                    listToDeselect.Add(headerKey);
                     if (dataItems.Count - 1 > indexedItem.Index)  // there are more items to check
                     {
                         for (var i = indexedItem.Index + 1; i < dataItems.Count; i++)
                         {
                             if (dataItems[i].Depth > indexedItem.Item.Depth)
                             {
-                                listToDeselect.Add(i);
+                                listToDeselect.Add(dataItems[i].Key);
                             }
                             else
                                 break;
                         }
                     }
-                    SelectionZone.RemoveIndices(listToDeselect);
+                    SelectionZone.RemoveKeys(listToDeselect);
                     //deselect it and all children
                     //var items = SubGroupSelector(headerItem.Item)?.RecursiveSelect<TItem, TItem>(r => SubGroupSelector(r), i => i).Append(headerItem.Item);
                     //SelectionZone.RemoveItems(items);
                 }
                 else
                 {
-                    var listToSelect = new List<int>();
+                    var listToSelect = new List<object>();
                     //select it and all possible children
-                    listToSelect.Add(indexedItem.Index);
+                    listToSelect.Add(headerKey);
                     if (dataItems.Count - 1 > indexedItem.Index)  // there are more items to check
                     {
                         for (var i = indexedItem.Index + 1; i < dataItems.Count; i++)
                         {
                             if (dataItems[i].Depth > indexedItem.Item.Depth)
                             {
-                                listToSelect.Add(i);
+                                listToSelect.Add(dataItems[i].Key);
                             }
                             else
                                 break;
                         }
                     }
-                    SelectionZone.AddIndices(listToSelect);
+                    SelectionZone.AddKeys(listToSelect);
                     //select it and all children
                     //var items = SubGroupSelector(headerItem.Item)?.RecursiveSelect<TItem, TItem>(r => SubGroupSelector(r), i => i).Append(headerItem.Item);
                     //SelectionZone.AddItems(items);
@@ -161,53 +200,53 @@ namespace BlazorFluentUI
             }
         }
 
-        private void OnHeaderToggled(IndexedItem<GroupedListItem<TItem>> indexedItem)
+        private void OnHeaderToggled(IndexedItem<GroupedListItem2<TItem>> indexedItem)
         {
             if (SelectionZone != null)
             {
                 // Doesn't seem to be any difference in the behavior for clicking the Header vs the checkmark in the header.
                 //does selection contain this item already?
-                if (SelectionZone.Selection.SelectedIndices.Contains(indexedItem.Index))
+                var headerKey = GetKeyForHeader(indexedItem.Item);
+                if (SelectionZone.Selection.SelectedKeys.Contains(headerKey))
                 {
-                    var listToDeselect = new List<int>();
+                    var listToDeselect = new List<object>();
                     //deselect it and all possible children
-                    listToDeselect.Add(indexedItem.Index);
+                    listToDeselect.Add(headerKey);
                     if (dataItems.Count - 1 > indexedItem.Index)  // there are more items to check
                     {
                         for (var i = indexedItem.Index + 1; i < dataItems.Count; i++)
                         {
                             if (dataItems[i].Depth > indexedItem.Item.Depth)
                             {
-                                listToDeselect.Add(i);
+                                listToDeselect.Add(dataItems[i].Key);
                             }
                             else
                                 break;
                         }
                     }
-                    SelectionZone.RemoveIndices(listToDeselect);
+                    SelectionZone.RemoveKeys(listToDeselect);
                     //deselect it and all children
                     //var items = SubGroupSelector(headerItem.Item)?.RecursiveSelect<TItem, TItem>(r => SubGroupSelector(r), i => i).Append(headerItem.Item);
-
                     //SelectionZone.RemoveItems(items);
                 }
                 else
                 {
-                    var listToSelect = new List<int>();
+                    var listToSelect = new List<object>();
                     //select it and all possible children
-                    listToSelect.Add(indexedItem.Index);
+                    listToSelect.Add(headerKey);
                     if (dataItems.Count - 1 > indexedItem.Index)  // there are more items to check
                     {
                         for (var i = indexedItem.Index + 1; i < dataItems.Count; i++)
                         {
                             if (dataItems[i].Depth > indexedItem.Item.Depth)
                             {
-                                listToSelect.Add(i);
+                                listToSelect.Add(dataItems[i].Key);
                             }
                             else
                                 break;
                         }
                     }
-                    SelectionZone.AddIndices(listToSelect);
+                    SelectionZone.AddKeys(listToSelect);
                     //select it and all children
                     //var items = SubGroupSelector(headerItem.Item)?.RecursiveSelect<TItem, TItem>(r => SubGroupSelector(r), i => i).Append(headerItem.Item);
                     //SelectionZone.AddItems(items);
@@ -246,129 +285,222 @@ namespace BlazorFluentUI
         public void ForceUpdate()
         {
             _itemsSource = null;
+
             StateHasChanged();
         }
 
         protected override async Task OnParametersSetAsync()
         {
-            if (SubGroupSelector != null)
+            if (GetKey == null)
             {
-                //if (ItemsSource != null && !ItemsSource.Equals(_itemsSource))
-                //if (RootGroup != null && !RootGroup.Equals(_rootGroup))
-
-                if (ItemsSource != null && !ItemsSource.Equals(_itemsSource))
+                if (!(ItemsSource is IList<TItem>))
                 {
-                    //dispose old subscriptions
-                    _transformedDisposable?.Dispose();
-
-                    _itemsSource = ItemsSource;
-                    if (_itemsSource != null)
-                    {
-                        var changeSet = _itemsSource.AsObservableChangeSet();
-                        System.Collections.Generic.List<HeaderItem<TItem>> headersList = new System.Collections.Generic.List<HeaderItem<TItem>>();
-                        Dictionary<int, int> depthIndex = new Dictionary<int, int>();
-
-                        var rootIndex = 0;
-                        
-                        var transformedChangeSet = changeSet.TransformMany<GroupedListItem<TItem>, TItem>((x) =>
-
-                        {
-                            var header = new HeaderItem<TItem>(x, null, rootIndex++, 0, GroupTitleSelector);
-                            headersList.Add(header);
-                            var children = SubGroupSelector(x).RecursiveSelect<TItem, GroupedListItem<TItem>>(
-                                                                                    r => SubGroupSelector(r),
-                                                                                             (s, index, depth) =>
-                                                                                             {
-                                                                                                 if (!depthIndex.ContainsKey(depth))
-                                                                                                     depthIndex[depth] = 0;
-                                                                                                 var parent = headersList.FirstOrDefault(header => header.Depth == depth-1 && SubGroupSelector(header.Item).Contains(s));
-                                                                                                 if (SubGroupSelector(s) == null || SubGroupSelector(s).Count() == 0)
-                                                                                                 {
-                                                                                                     var item = new PlainItem<TItem>(s, parent, index, depth);
-                                                                                                     parent?.Children.Add(item);
-                                                                                                     return item;
-                                                                                                 }
-                                                                                                 else
-                                                                                                 {
-                                                                                                     var header = new HeaderItem<TItem>(s, parent, index, depth, GroupTitleSelector);
-                                                                                                     headersList.Add(header);
-                                                                                                     parent?.Children.Add(header);
-                                                                                                     return header;
-                                                                                                 }
-                                                                                             },
-                                                                                             1);
-                            return Enumerable.Repeat(header, 1).Concat(children);
-                        });
-
-
-                        _transformedDisposable = transformedChangeSet
-                            .AutoRefreshOnObservable(x => x.IsVisibleObservable)
-                            //.Filter(x => x.IsVisible)
-                            .Sort(new GroupedListItemComparer<TItem>())
-                            .Bind(out dataItems)
-                            .Do(x=> 
-                            {
-                                this.OnGeneratedListItems.InvokeAsync(new GroupedListCollection<TItem> { GroupedListItems = dataItems});
-                                })
-                            .Subscribe();
-
-                    }
+                    throw new Exception("ItemsSource must either have GetKey set to point to a key value for each item OR ItemsSource must be an indexable list that implements IList.");
                 }
+                getKeyInternal = item => ItemsSource.IndexOf(item);
+            }
+            else
+            {
+                getKeyInternal = GetKey;
             }
 
-            //if (Selection != null)
+
+            if (SortBy != _sortBy || SortDescending != _sortDescending)
+            {
+                _sortBy = SortBy;
+                _sortDescending = SortDescending;
+                if (SortBy != null)
+                {
+                    var index = 0;
+                    foreach (var sortFunc in SortBy)
+                    {
+                        if (SortDescending != null && SortDescending.ElementAt(index) != null && SortDescending.ElementAt(index) == true)
+                            sortExpressionComparer.OnNext(SortExpressionComparer<TItem>.Descending(sortFunc.ConvertToIComparable()));
+                        else
+                            sortExpressionComparer.OnNext(SortExpressionComparer<TItem>.Ascending(sortFunc.ConvertToIComparable()));
+                        //if (SortDescending != null && SortDescending.ElementAt(index) != null && SortDescending.ElementAt(index) == true)
+                        //    sortExpressionComparer.OnNext(SortExpressionComparer<GroupedListItem2<TItem>>.Descending(x => 
+                        //    {
+                        //        if (x is HeaderItem2<TItem>)
+                        //        {
+                        //            return 0;
+                        //        }
+                        //        else
+                        //        {
+                        //            return sortFunc.ConvertToIComparable()(x.Item);
+                        //        }
+                        //    }));
+                        //else
+                        //    sortExpressionComparer.OnNext(SortExpressionComparer<GroupedListItem2<TItem>>.Ascending(x => 
+                        //    {
+                        //        if (x is HeaderItem2<TItem>)
+                        //        {
+                        //            return 0;
+                        //        }
+                        //        else
+                        //        {
+                        //            return sortFunc.ConvertToIComparable()(x.Item);
+                        //        }
+                        //    }));
+                    }
+                }
+                else
+                {
+                    sortExpressionComparer.OnNext(new SortExpressionComparer<TItem>());
+                }
+                //_resorter.OnNext(Unit.Default);
+            }
+
+            if (GroupBy != null)
+            {
+                if (ItemsSource != null && !ItemsSource.Equals(_itemsSource))
+                {
+                    _itemsSource = ItemsSource;
+                    CreateSourceCache();
+                    sourceCache.AddOrUpdate(_itemsSource);
+                }
+            }
+            else if (SubGroupSelector != null)
+            {
+                ////if (ItemsSource != null && !ItemsSource.Equals(_itemsSource))
+                ////if (RootGroup != null && !RootGroup.Equals(_rootGroup))
+
+                //if (ItemsSource != null && !ItemsSource.Equals(_itemsSource))
+                //{
+                //    //dispose old subscriptions
+                //    _transformedDisposable?.Dispose();
+
+                //    _itemsSource = ItemsSource;
+                //    if (_itemsSource != null)
+                //    {
+                //        var changeSet = _itemsSource.AsObservableChangeSet();
+                //        System.Collections.Generic.List<HeaderItem<TItem>> headersList = new System.Collections.Generic.List<HeaderItem<TItem>>();
+                //        Dictionary<int, int> depthIndex = new Dictionary<int, int>();
+
+                //        var rootIndex = 0;
+
+                //        var transformedChangeSet = changeSet.TransformMany<GroupedListItem<TItem>, TItem>((x) =>
+
+                //        {
+                //            var header = new HeaderItem<TItem>(x, null, rootIndex++, 0, GroupTitleSelector);
+                //            headersList.Add(header);
+                //            var children = SubGroupSelector(x)
+                //                .RecursiveSelect<TItem, GroupedListItem<TItem>>(
+                //                r => SubGroupSelector(r),
+                //                            (s, index, depth) =>
+                //                            {
+                //                                if (!depthIndex.ContainsKey(depth))
+                //                                    depthIndex[depth] = 0;
+                //                                var parent = headersList.FirstOrDefault(header => header.Depth == depth - 1 && SubGroupSelector(header.Item).Contains(s));
+                //                                if (SubGroupSelector(s) == null || SubGroupSelector(s).Count() == 0)
+                //                                {
+                //                                    var item = new PlainItem<TItem>(s, parent, index, depth);
+                //                                    parent?.Children.Add(item);
+                //                                    return item;
+                //                                }
+                //                                else
+                //                                {
+                //                                    var header = new HeaderItem<TItem>(s, parent, index, depth, GroupTitleSelector);
+                //                                    headersList.Add(header);
+                //                                    parent?.Children.Add(header);
+                //                                    return header;
+                //                                }
+                //                            },
+                //                            1);
+                //            return Enumerable.Repeat(header, 1).Concat(children);
+                //        });
+
+
+                //        _transformedDisposable = transformedChangeSet
+                //            .AutoRefreshOnObservable(x => x.IsVisibleObservable)
+                //            //.Filter(x => x.IsVisible)
+                //            .Sort(new GroupedListItemComparer<TItem>())
+                //            .Bind(out dataItems)
+                //            .Do(x =>
+                //            {
+                //                this.OnGeneratedListItems.InvokeAsync(new GroupedListCollection<TItem> { GroupedListItems = dataItems });
+                //            })
+                //            .Subscribe();
+
+                //    }
+                //}
+            }
+
+
+
+            await base.OnParametersSetAsync();
+            
+        }
+
+        protected override Task OnAfterRenderAsync(bool firstRender)
+        {
+            Debug.WriteLine($"There are {groupedUIListItems.Count} items to render");
+            return base.OnAfterRenderAsync(firstRender);
+        }
+
+        private void CreateSourceCache()
+        {
+            sourceCacheSubscription?.Dispose();
+            sourceCacheSubscription = null;
+
+            if (_itemsSource == null)
+            {
+                return;
+            }
+            
+            sourceCache = new SourceCache<TItem, object>(getKeyInternal);
+
+            var expression = sourceCache.Connect().ChangeKey(x => new AggregationKey(AggregationType.Item, getKeyInternal));
+
+
+            ////grouping
+            //var firstGroupBy = GroupBy.First();
+
+            //var groups = expression.Group(firstGroupBy);
+
+            //var depth = 0;
+
+            //// using or and sorting groups later
+            //var headerItems = groups.Transform(x =>
             //{
-            //    if (SelectionMode == SelectionMode.Single && Selection.SelectedItems.Count() > 1)
-            //    {
-            //        SelectionZone.ClearSelection();
-            //    }
-            //    else if (SelectionMode == SelectionMode.None && Selection.SelectedItems.Count() > 0)
-            //    {
-            //        Selection.ClearSelection();
-            //    }
-            //    else
-            //    {
-            //        bool hasChanged = false;
-            //        //make a copy of list
-            //        var selected = Selection.SelectedItems.ToList();
-            //    //check to see if a header needs to be turned OFF because all of its children are *not* selected.
-            //    restart:
-            //        var headers = selected.Where(x => SubGroupSelector(x) != null && SubGroupSelector(x).Count() > 0).ToList();
-            //        foreach (var header in headers)
-            //        {
-            //            if (SubGroupSelector(header).Except(selected).Count() > 0)
-            //            {
-            //                hasChanged = true;
-            //                selected.Remove(header);
-            //                //start loop over again, simplest way to start over is a goto statement.  This is needed when a header turns off, but it's parent header needs to turn off, too.
-            //                goto restart;
-            //            }
-            //        }
+            //    return new HeaderItem2<TItem>(default, null, depth, x.Key.ToString()) as GroupedListItem2<TItem>;
+            //});
 
-            //        //check to see if a header needs to be turned ON because all of its children *are* selected.
-            //        var potentialHeaders = dataItems.Where(x => selected.Contains(x.Item)).Select(x => x.Parent).Where(x => x != null).Distinct().ToList();
-            //        foreach (var header in potentialHeaders)
-            //        {
-            //            if (header.Children.Select(x => x.Item).Except(selected).Count() == 0)
-            //            {
-            //                if (!selected.Contains(header.Item))
-            //                {
-            //                    selected.Add(header.Item);
-            //                    hasChanged = true;
-            //                }
-            //            }
-            //        }
+            ////assume only 1 grouping operation
+            //var subItems = groups.MergeMany(group =>
+            //{
+            //    return group.Cache.Connect()
+            //        .Sort(sortExpressionComparer)
+            //        .Transform(item => new PlainItem2<TItem>(item, group, depth + 1) as GroupedListItem2<TItem>);
+            //});
 
-            //        if (hasChanged)
-            //        {
-            //            SelectionZone.AddAndRemoveItems(selected.Except(Selection.SelectedItems).ToList(), Selection.SelectedItems.Except(selected).ToList());
-            //        }
+            //var items = headerItems.Or(subItems);
+
+
+            var items = expression.FlatGroup(GroupBy, 0, new List<object>()).Sort(SortExpressionComparer<GroupedListItem2<TItem>>.Ascending(x=>x));
+
+            //if (SortBy != null)
+            //{
+            //    var index = 0;
+            //    foreach (var sortFunc in SortBy)
+            //    {
+            //        if (SortDescending != null && SortDescending.ElementAt(index) != null && SortDescending.ElementAt(index) == true)
+            //            items = items.Sort(SortExpressionComparer<GroupedListItem2<TItem>>.Descending(x=> sortFunc.ConvertToIComparable()(x.Item)));
+            //        else
+            //            items = items.Sort(SortExpressionComparer<GroupedListItem2<TItem>>.Ascending(x => sortFunc.ConvertToIComparable()(x.Item)));
             //    }
             //}
 
-            await base.OnParametersSetAsync();
+           
+
+            sourceCacheSubscription = items.Bind(out groupedUIListItems)
+                .Do(_ => InvokeAsync(StateHasChanged))
+                //.Do(_ => Debug.WriteLine($"There are {groupedUIListItems.Count} items to render."))
+                .Subscribe();
+
         }
 
+       
         //public void SelectAll()
         //{
         //    SelectionZone.AddItems(dataItems.)

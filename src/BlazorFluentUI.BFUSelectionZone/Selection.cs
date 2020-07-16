@@ -31,6 +31,20 @@ namespace BlazorFluentUI
             set => _selectedIndices = value;
         }
 
+        private ICollection<object> _selectedKeys;
+        public ICollection<object> SelectedKeys
+        {
+            get => _selectedKeys;
+            set => _selectedKeys = value;
+        }
+
+        private BehaviorSubject<ICollection<object>> selectedKeysSubject;
+        /// <summary>
+        /// Bypasses the dependence on Blazor's render cycle to propagate data.
+        /// </summary>
+        public IObservable<ICollection<object>> SelectedKeysObservable { get; private set; }
+
+
         private BehaviorSubject<ICollection<int>> selectedIndicesSubject;
 
         /// <summary>
@@ -43,11 +57,22 @@ namespace BlazorFluentUI
         {
             _selectedItems = new List<TItem>();
             _selectedIndices = new HashSet<int>();
+            _selectedKeys = new HashSet<object>();
+
+            selectedKeysSubject = new BehaviorSubject<ICollection<object>>(_selectedKeys);
+            SelectedKeysObservable = selectedKeysSubject.AsObservable();
+
             selectedIndicesSubject = new BehaviorSubject<ICollection<int>>(_selectedIndices);
             SelectedIndicesObservable = selectedIndicesSubject.AsObservable();
         }
 
-        
+        public Selection<TItem> SetSelectedKeys(ICollection<object> selectedKeys)
+        {
+            SelectedKeys = selectedKeys;            
+            selectedKeysSubject.OnNext(selectedKeys);
+            return this;
+        }
+
         public Selection<TItem> SetSelectedIndices(ICollection<int> selectedIndices)
         {
             SelectedIndices = selectedIndices;
@@ -114,6 +139,8 @@ namespace BlazorFluentUI
 
         public void ClearSelection()
         {
+            _selectedKeys = new HashSet<object>();
+            selectedKeysSubject.OnNext(_selectedKeys);
             _selectedItems = new List<TItem>();
             _selectedIndices = new HashSet<int>();
             selectedIndicesSubject.OnNext(_selectedIndices);

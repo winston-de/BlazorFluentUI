@@ -51,11 +51,13 @@ namespace BlazorFluentUI
         private IEnumerable<GroupedListItem<TItem>>? _groupedItemsSource;  //need to assume this iteration of ItemsSource has temporary order.
         //private Dictionary<Guid, TItem> dic;
         //private HashSet<Guid> selectedKeys;
-        private HashSet<int> selectedIndices;// = new HashSet<TItem>();
+        //private HashSet<int> selectedIndices;// = new HashSet<TItem>();
+        private HashSet<object> selectedKeys;
 
         //private BehaviorSubject<ICollection<int>> selectedIndicesSubject;
 
-        public IObservable<ICollection<int>> SelectedIndicesObservable => Selection.SelectedIndicesObservable; //{ get; private set; }
+        //public IObservable<ICollection<int>> SelectedIndicesObservable => Selection.SelectedIndicesObservable; //{ get; private set; }
+        public IObservable<ICollection<object>> SelectedKeysObservable => Selection.SelectedKeysObservable; //{ get; private set; }
 
         private bool doNotRenderOnce = false;
 
@@ -78,7 +80,8 @@ namespace BlazorFluentUI
         {
             //dic = new Dictionary<Guid, TItem>();
             //selectedKeys = new HashSet<Guid>();
-            selectedIndices = new HashSet<int>();
+            selectedKeys = new HashSet<object>();
+            //selectedIndices = new HashSet<int>();
             //selectedIndicesSubject = new BehaviorSubject<ICollection<int>>(selectedIndices);
             //SelectedIndicesObservable = selectedIndicesSubject.AsObservable();
         }
@@ -92,25 +95,28 @@ namespace BlazorFluentUI
 
         protected override async Task OnParametersSetAsync()
         {           
-            if (Selection != null && Selection.SelectedIndices != selectedIndices)
+            if (Selection != null && Selection.SelectedKeys != selectedKeys)
             {
-                selectedIndices = new System.Collections.Generic.HashSet<int>(Selection.SelectedIndices);
+                //selectedIndices = new System.Collections.Generic.HashSet<int>(Selection.SelectedIndices);
+                selectedKeys = new HashSet<object>(Selection.SelectedKeys);
                 //selectedItemsSubject.OnNext(selectedItems);
                 //StateHasChanged();
             }
 
-            if (SelectionMode == SelectionMode.Single && selectedIndices.Count() > 1)
+            if (SelectionMode == SelectionMode.Single && selectedKeys.Count() > 1)
             {
-                selectedIndices.Clear();
-                //selectedItemsSubject.OnNext(selectedItems);
-                Selection?.SetSelectedIndices(selectedIndices);
+                selectedKeys.Clear();
+                Selection?.SetSelectedKeys(selectedKeys);
+                //selectedIndices.Clear();
+                //Selection?.SetSelectedIndices(selectedIndices);
                 await SelectionChanged.InvokeAsync(Selection);
             }
-            else if (SelectionMode == SelectionMode.None && selectedIndices.Count() > 0)
+            else if (SelectionMode == SelectionMode.None && selectedKeys.Count() > 0)
             {
-                selectedIndices.Clear();
-                //selectedItemsSubject.OnNext(selectedItems);
-                Selection?.SetSelectedIndices(selectedIndices);
+                selectedKeys.Clear();
+                Selection?.SetSelectedKeys(selectedKeys);
+                //selectedIndices.Clear();
+                //Selection?.SetSelectedIndices(selectedIndices);
                 await SelectionChanged.InvokeAsync(Selection);
             }
             await base.OnParametersSetAsync();
@@ -208,31 +214,31 @@ namespace BlazorFluentUI
         //        SelectionChanged.InvokeAsync(new Selection<TItem>(selectedIndices));
         //    }
         //}
-        public void SelectIndex(int index, bool asSingle = false)
+        public void SelectKey(object key, bool asSingle=false)
         {
             bool hasChanged = false;
             if (SelectionMode == SelectionMode.Multiple && !asSingle)
             {
                 hasChanged = true;
-                if (selectedIndices.Contains(index))
-                    selectedIndices.Remove(index);
+                if (selectedKeys.Contains(key))
+                    selectedKeys.Remove(key);
                 else
-                    selectedIndices.Add(index);
+                    selectedKeys.Add(key);
             }
             else if (SelectionMode == SelectionMode.Multiple && asSingle)
             {
                 //same as single except we need to clear other items if they are selected, too
                 hasChanged = true;
-                selectedIndices.Clear();
-                selectedIndices.Add(index);
+                selectedKeys.Clear();
+                selectedKeys.Add(key);
             }
             else if (SelectionMode == SelectionMode.Single)
             {
-                if (!selectedIndices.Contains(index))
+                if (!selectedKeys.Contains(key))
                 {
                     hasChanged = true;
-                    selectedIndices.Clear();
-                    selectedIndices.Add(index);
+                    selectedKeys.Clear();
+                    selectedKeys.Add(key);
                 }
             }
 
@@ -240,9 +246,45 @@ namespace BlazorFluentUI
             {
                 doNotRenderOnce = true;
                 //selectedIndicesSubject.OnNext(selectedIndices);
-                SelectionChanged.InvokeAsync(Selection.SetSelectedIndices(selectedIndices));
+                SelectionChanged.InvokeAsync(Selection.SetSelectedKeys(selectedKeys));
             }
         }
+
+        //public void SelectIndex(int index, bool asSingle = false)
+        //{
+        //    bool hasChanged = false;
+        //    if (SelectionMode == SelectionMode.Multiple && !asSingle)
+        //    {
+        //        hasChanged = true;
+        //        if (selectedIndices.Contains(index))
+        //            selectedIndices.Remove(index);
+        //        else
+        //            selectedIndices.Add(index);
+        //    }
+        //    else if (SelectionMode == SelectionMode.Multiple && asSingle)
+        //    {
+        //        //same as single except we need to clear other items if they are selected, too
+        //        hasChanged = true;
+        //        selectedIndices.Clear();
+        //        selectedIndices.Add(index);
+        //    }
+        //    else if (SelectionMode == SelectionMode.Single)
+        //    {
+        //        if (!selectedIndices.Contains(index))
+        //        {
+        //            hasChanged = true;
+        //            selectedIndices.Clear();
+        //            selectedIndices.Add(index);
+        //        }
+        //    }
+
+        //    if (hasChanged)
+        //    {
+        //        doNotRenderOnce = true;
+        //        //selectedIndicesSubject.OnNext(selectedIndices);
+        //        SelectionChanged.InvokeAsync(Selection.SetSelectedIndices(selectedIndices));
+        //    }
+        //}
 
         //public void AddItems(IEnumerable<TItem> items)
         //{
@@ -259,21 +301,38 @@ namespace BlazorFluentUI
         //        SelectionChanged.InvokeAsync(new Selection<TItem>(selectedIndices));
         //    }
         //}
-        public void AddIndices(IEnumerable<int> indices)
+
+        public void AddKeys(IEnumerable<object> keys)
         {
-            foreach (var index in indices)
+            foreach (var key in keys)
             {
-                if (!selectedIndices.Contains(index))
-                    selectedIndices.Add(index);
+                if (!selectedKeys.Contains(key))
+                    selectedKeys.Add(key);
             }
 
-            if (indices != null && indices.Count() > 0)
+            if (keys != null && keys.Count() > 0)
             {
                 doNotRenderOnce = true;
                 //selectedIndicesSubject.OnNext(selectedIndices);
-                SelectionChanged.InvokeAsync(Selection.SetSelectedIndices(selectedIndices));
+                SelectionChanged.InvokeAsync(Selection.SetSelectedKeys(selectedKeys));
             }
         }
+
+        //public void AddIndices(IEnumerable<int> indices)
+        //{
+        //    foreach (var index in indices)
+        //    {
+        //        if (!selectedIndices.Contains(index))
+        //            selectedIndices.Add(index);
+        //    }
+
+        //    if (indices != null && indices.Count() > 0)
+        //    {
+        //        doNotRenderOnce = true;
+        //        //selectedIndicesSubject.OnNext(selectedIndices);
+        //        SelectionChanged.InvokeAsync(Selection.SetSelectedIndices(selectedIndices));
+        //    }
+        //}
 
         //public void RemoveItems(IEnumerable<TItem> items)
         //{
@@ -289,20 +348,36 @@ namespace BlazorFluentUI
         //        SelectionChanged.InvokeAsync(new Selection<TItem>(selectedIndices));
         //    }
         //}
-        public void RemoveIndices(IEnumerable<int> indices)
+
+        public void RemoveKeys(IEnumerable<object> keys)
         {
-            foreach (var index in indices)
+            foreach (var key in keys)
             {
-                selectedIndices.Remove(index);
+                selectedKeys.Remove(key);
             }
 
-            if (indices != null && indices.Count() > 0)
+            if (keys != null && keys.Count() > 0)
             {
                 doNotRenderOnce = true;
                 //selectedIndicesSubject.OnNext(selectedIndices);
-                SelectionChanged.InvokeAsync(Selection.SetSelectedIndices(selectedIndices));
+                SelectionChanged.InvokeAsync(Selection.SetSelectedKeys(selectedKeys));
             }
         }
+
+        //public void RemoveIndices(IEnumerable<int> indices)
+        //{
+        //    foreach (var index in indices)
+        //    {
+        //        selectedIndices.Remove(index);
+        //    }
+
+        //    if (indices != null && indices.Count() > 0)
+        //    {
+        //        doNotRenderOnce = true;
+        //        //selectedIndicesSubject.OnNext(selectedIndices);
+        //        SelectionChanged.InvokeAsync(Selection.SetSelectedIndices(selectedIndices));
+        //    }
+        //}
 
         //public void AddAndRemoveItems(IEnumerable<TItem> itemsToAdd, IEnumerable<TItem> itemsToRemove)
         //{
@@ -323,36 +398,62 @@ namespace BlazorFluentUI
         //        SelectionChanged.InvokeAsync(new Selection<TItem>(selectedIndices));
         //    }
         //}
-        public void AddAndRemoveIndices(IEnumerable<int> indicesToAdd, IEnumerable<int> indicesToRemove)
+        public void AddAndRemoveKeys(IEnumerable<object> keysToAdd, IEnumerable<int> keysToRemove)
         {
-            foreach (var index in indicesToAdd)
+            foreach (var key in keysToAdd)
             {
-                if (!selectedIndices.Contains(index))
-                    selectedIndices.Add(index);
+                if (!selectedKeys.Contains(key))
+                    selectedKeys.Add(key);
             }
-            foreach (var index in indicesToRemove)
+            foreach (var key in keysToRemove)
             {
-                selectedIndices.Remove(index);
+                selectedKeys.Remove(key);
             }
 
-            if ((indicesToAdd != null && indicesToAdd.Count() > 0) || (indicesToRemove != null && indicesToRemove.Count() > 0))
+            if ((keysToAdd != null && keysToAdd.Count() > 0) || (keysToRemove != null && keysToRemove.Count() > 0))
             {
                 doNotRenderOnce = true;
                 //selectedIndicesSubject.OnNext(selectedIndices);
-                SelectionChanged.InvokeAsync(Selection.SetSelectedIndices(selectedIndices));
+                SelectionChanged.InvokeAsync(Selection.SetSelectedKeys(selectedKeys));
             }
         }
+
+        //public void AddAndRemoveIndices(IEnumerable<int> indicesToAdd, IEnumerable<int> indicesToRemove)
+        //{
+        //    foreach (var index in indicesToAdd)
+        //    {
+        //        if (!selectedIndices.Contains(index))
+        //            selectedIndices.Add(index);
+        //    }
+        //    foreach (var index in indicesToRemove)
+        //    {
+        //        selectedIndices.Remove(index);
+        //    }
+
+        //    if ((indicesToAdd != null && indicesToAdd.Count() > 0) || (indicesToRemove != null && indicesToRemove.Count() > 0))
+        //    {
+        //        doNotRenderOnce = true;
+        //        //selectedIndicesSubject.OnNext(selectedIndices);
+        //        SelectionChanged.InvokeAsync(Selection.SetSelectedIndices(selectedIndices));
+        //    }
+        //}
 
 
         public void ClearSelection()
         {
-            if (selectedIndices.Count>0)
+            if (selectedKeys.Count > 0)
             {
-                selectedIndices.Clear();
+                selectedKeys.Clear();
                 doNotRenderOnce = true;
-                //selectedIndicesSubject.OnNext(selectedIndices);
-                SelectionChanged.InvokeAsync(Selection.SetSelectedIndices(selectedIndices));
+                SelectionChanged.InvokeAsync(Selection.SetSelectedKeys(selectedKeys));
             }
+            //if (selectedIndices.Count>0)
+            //{
+            //    selectedIndices.Clear();
+            //    doNotRenderOnce = true;
+            //    //selectedIndicesSubject.OnNext(selectedIndices);
+            //    SelectionChanged.InvokeAsync(Selection.SetSelectedIndices(selectedIndices));
+            //}
         }
 
         // For end-users to let SelectionMode handle what to do.
@@ -384,24 +485,53 @@ namespace BlazorFluentUI
         //        SelectionChanged.InvokeAsync(new Selection<TItem>(selectedIndices));
         //    }
         //}
-        public void HandleClick(int index)
+        //public void HandleClick(int index)
+        //{
+        //    bool hasChanged = false;
+        //    if (SelectionMode == SelectionMode.Multiple)
+        //    {
+        //        hasChanged = true;
+        //        if (selectedIndices.Contains(index))
+        //            selectedIndices.Remove(index);
+        //        else
+        //            selectedIndices.Add(index);
+        //    }
+        //    else if (SelectionMode == SelectionMode.Single)
+        //    {
+        //        if (!selectedIndices.Contains(index))
+        //        {
+        //            hasChanged = true;
+        //            selectedIndices.Clear();
+        //            selectedIndices.Add(index);
+        //        }
+        //    }
+
+        //    if (hasChanged)
+        //    {
+        //        doNotRenderOnce = true;
+        //        //selectedIndicesSubject.OnNext(selectedIndices);
+        //        SelectionChanged.InvokeAsync(Selection.SetSelectedIndices(selectedIndices));
+        //    }
+        //}
+
+        public void HandleClick(object key)
         {
             bool hasChanged = false;
             if (SelectionMode == SelectionMode.Multiple)
             {
                 hasChanged = true;
-                if (selectedIndices.Contains(index))
-                    selectedIndices.Remove(index);
+                if (selectedKeys.Contains(key))
+                    selectedKeys.Remove(key);
                 else
-                    selectedIndices.Add(index);
+                    selectedKeys.Add(key);
             }
             else if (SelectionMode == SelectionMode.Single)
             {
-                if (!selectedIndices.Contains(index))
+                if (!selectedKeys.Contains(key))
                 {
                     hasChanged = true;
-                    selectedIndices.Clear();
-                    selectedIndices.Add(index);
+                    selectedKeys.Clear();
+                    selectedKeys.Add(key);
                 }
             }
 
@@ -409,7 +539,7 @@ namespace BlazorFluentUI
             {
                 doNotRenderOnce = true;
                 //selectedIndicesSubject.OnNext(selectedIndices);
-                SelectionChanged.InvokeAsync(Selection.SetSelectedIndices(selectedIndices));
+                SelectionChanged.InvokeAsync(Selection.SetSelectedKeys(selectedKeys));
             }
         }
 
@@ -447,26 +577,59 @@ namespace BlazorFluentUI
         //        SelectionChanged.InvokeAsync(new Selection<TItem>(selectedIndices));
         //    }
         //}
-        public void HandleToggle(int index)
+        //public void HandleToggle(int index)
+        //{
+        //    bool hasChanged = false;
+        //    switch (SelectionMode)
+        //    {
+        //        case SelectionMode.Multiple:
+        //            hasChanged = true;
+        //            if (selectedIndices.Contains(index))
+        //                selectedIndices.Remove(index);
+        //            else
+        //                selectedIndices.Add(index);
+        //            break;
+        //        case SelectionMode.Single:
+        //            hasChanged = true;
+        //            if (selectedIndices.Contains(index))
+        //                selectedIndices.Remove(index);
+        //            else
+        //            {
+        //                selectedIndices.Clear();
+        //                selectedIndices.Add(index);
+        //            }
+        //            break;
+        //        case SelectionMode.None:
+        //            break;
+        //    }
+
+        //    if (hasChanged)
+        //    {
+        //        doNotRenderOnce = true;
+        //        //selectedIndicesSubject.OnNext(selectedIndices);
+        //        SelectionChanged.InvokeAsync(Selection.SetSelectedIndices(selectedIndices));
+        //    }
+        //}
+        public void HandleToggle(object key)
         {
             bool hasChanged = false;
             switch (SelectionMode)
             {
                 case SelectionMode.Multiple:
                     hasChanged = true;
-                    if (selectedIndices.Contains(index))
-                        selectedIndices.Remove(index);
+                    if (selectedKeys.Contains(key))
+                        selectedKeys.Remove(key);
                     else
-                        selectedIndices.Add(index);
+                        selectedKeys.Add(key);
                     break;
                 case SelectionMode.Single:
                     hasChanged = true;
-                    if (selectedIndices.Contains(index))
-                        selectedIndices.Remove(index);
+                    if (selectedKeys.Contains(key))
+                        selectedKeys.Remove(key);
                     else
                     {
-                        selectedIndices.Clear();
-                        selectedIndices.Add(index);
+                        selectedKeys.Clear();
+                        selectedKeys.Add(key);
                     }
                     break;
                 case SelectionMode.None:
@@ -477,7 +640,7 @@ namespace BlazorFluentUI
             {
                 doNotRenderOnce = true;
                 //selectedIndicesSubject.OnNext(selectedIndices);
-                SelectionChanged.InvokeAsync(Selection.SetSelectedIndices(selectedIndices));
+                SelectionChanged.InvokeAsync(Selection.SetSelectedKeys(selectedKeys));
             }
         }
 

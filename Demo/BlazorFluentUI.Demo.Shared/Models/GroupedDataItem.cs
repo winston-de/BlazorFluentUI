@@ -17,11 +17,11 @@ namespace BlazorFluentUI.Demo.Shared.Models
         public IObservableCollection<GroupedDataItem> ObservableData { get; set; } = new ObservableCollectionExtended<GroupedDataItem>();
 
 
-        public GroupedDataItem(IGroup<DataItem, string, int> group, IObservable<SortExpressionComparer<GroupedDataItem>> sortExpressionObservable)
+        public GroupedDataItem(IGroup<DataItem, string, int> group)
         {
             var disposable = group.Cache.Connect()
                 .Transform(x => new GroupedDataItem(x))
-                .Sort(sortExpressionObservable)
+                //.Sort(sortExpressionObservable)
                 .Do(_=>Debug.WriteLine("groupDataItem has updated sort"))
                 .Bind(ObservableData)
                 .Subscribe();

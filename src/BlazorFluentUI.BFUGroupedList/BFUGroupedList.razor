@@ -2,20 +2,19 @@
 @inherits BFUComponentBase
 @typeparam TItem
 
-@if (dataItems != null)
+@if (groupedUIListItems != null)
 {
-    <BFUList TItem="GroupedListItem<TItem>"
+    <BFUList TItem="GroupedListItem2<TItem>"
           @ref="listReference"
           ClassName=@($"ms-GroupedList{(string.IsNullOrEmpty(ClassName) ? "" : " " + ClassName)}")
           IsVirtualizing=@IsVirtualizing
-          ItemsSource=@dataItems
+          ItemsSource=@groupedUIListItems
           OnViewportChanged=@OnViewportChanged
           >
         <ItemTemplate>
-
-            @if (context.Item is HeaderItem<TItem>)
+            @if (context.Item is HeaderItem2<TItem>)
             {
-                var header = context.Item as HeaderItem<TItem>;
+                var header = context.Item as HeaderItem2<TItem>;
                 <BFUGroupHeader IsOpen=@header.IsOpen 
                              OnOpenChanged=@((isOpen)=>header.IsOpen = isOpen)
                              Count=@header.RecursiveCount

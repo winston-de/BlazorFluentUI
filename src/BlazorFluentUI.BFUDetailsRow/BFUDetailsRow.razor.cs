@@ -53,6 +53,9 @@ namespace BlazorFluentUI
         public int ItemIndex { get; set; }
 
         [Parameter]
+        public object Key { get; set; }
+
+        [Parameter]
         public double RowWidth { get; set; } = 0;
 
         [Parameter]
@@ -101,9 +104,9 @@ namespace BlazorFluentUI
 
             if (SelectionZone != null)
             {
-                SelectionZone.SelectedIndicesObservable.Subscribe(x =>
+                SelectionZone.SelectedKeysObservable.Subscribe(x =>
                 {
-                    if (x.Contains(this.ItemIndex))
+                    if (x.Contains(this.Key))
                     {
                         if (isSelected != true)
                         {

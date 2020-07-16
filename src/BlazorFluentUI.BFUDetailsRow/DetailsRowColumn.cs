@@ -12,15 +12,20 @@ namespace BlazorFluentUI
     {
         //public RenderFragment<TProp> ColumnItemTemplate { get; set; }
         //public Func<TItem, object> FieldSelector { get; set; }
+        private Func<TProp, bool> _filterPredicate;
+        public new Func<TProp, bool> FilterPredicate { get=>_filterPredicate; set { _filterPredicate = value; base.FilterPredicate = x => FilterPredicate != null ? FilterPredicate((TProp)x) : true; } }
 
         public BFUDetailsRowColumn()
         {
             PropType = typeof(TProp);
+            //base.FilterPredicate = x => FilterPredicate != null ? FilterPredicate((TProp)x) : true;
             Initialize();
         }
         public BFUDetailsRowColumn(string fieldName, Func<TItem, object> fieldSelector)
         {
             PropType = typeof(TProp);
+
+            
             Name = fieldName;
             Key = fieldName;
             AriaLabel = fieldName;
@@ -39,6 +44,9 @@ namespace BlazorFluentUI
         public ColumnActionsMode ColumnActionsMode { get; set; } = ColumnActionsMode.Clickable;
         public RenderFragment<object> ColumnItemTemplate { get; set; }
         public Func<TItem, object> FieldSelector { get; set; }  //was IComparable
+
+        private Func<object, bool> _filterPredicate;
+        public Func<object,bool> FilterPredicate { get => _filterPredicate; set { if (_filterPredicate == value) return; else { _filterPredicate = value; OnPropertyChanged(); } } }
         public string FilterAriaLabel { get; set; }
         public string GroupAriaLabel { get; set; }
         public string IconClassName { get; set; }

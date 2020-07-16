@@ -17,8 +17,10 @@
             </BFUDropdown>
         </BFUStack>
         <BFUTextField Label="Filter Description"
-                   @bind-Value=@dataContainer.Filter
-                   @bind-Value:event="OnInput"/>
+                   Value=@filter
+                   OnInput=@(val => { filter = val; detailsList?.Filter();  })
+                      
+                    />
 
         <BFUDetailsList ItemsSource="ReadonlyList"
                         IsVirtualizing="isVirtualizing"
@@ -28,6 +30,7 @@
                         LayoutMode="DetailsListLayoutMode.Justified"
                         @bind-Selection="selection"
                         SelectionMode=@((SelectionMode)Enum.Parse(typeof(SelectionMode), selectedModeOption.Key))
+                        @ref="detailsList"
                         />
     </BFUStack>
 
@@ -42,7 +45,7 @@
     IBFUDropdownOption selectedModeOption;
     List<IBFUDropdownOption> selectionModeOptions;
 
-
+    BFUDetailsList<DataItem> detailsList;
     Selection<DataItem> selection = new Selection<DataItem>();
 
     // SourceCache is from DynamicData and is basically a container for your items that you can dynamically transform by filtering, sorting, etc. 
@@ -54,58 +57,60 @@
     SourceCache<BFUDetailsRowColumn<DataItem>, string> columnsSource = new SourceCache<BFUDetailsRowColumn<DataItem>, string>(x => x.Key);
     public ReadOnlyObservableCollection<BFUDetailsRowColumn<DataItem>> ReadonlyColumns;
 
+    string filter = "";
+
     // This class just holds some properties that make it easier to sort and filter data. 
-    ObservableDataContainer dataContainer = new ObservableDataContainer();
+    //ObservableDataContainer dataContainer = new ObservableDataContainer();
 
-    class ObservableDataContainer : AbstractNotifyPropertyChanged
-    {
-        private string filter = "";
-        public string Filter { get => filter; set => SetAndRaise(ref filter, value); }
+    //class ObservableDataContainer : AbstractNotifyPropertyChanged
+    //{
+    //    private string filter = "";
+    //    public string Filter { get => filter; set => SetAndRaise(ref filter, value); }
 
-        private bool descending = false;
-        public bool Descending { get => descending; set => SetAndRaise(ref descending, value); }
+    //    private bool descending = false;
+    //    public bool Descending { get => descending; set => SetAndRaise(ref descending, value); }
 
-        // When you click a column, we change this so DynamicData can know which property to sort by.
-        private Func<DataItem, IComparable> sortSelector = x=>x.KeyNumber;
-        public Func<DataItem, IComparable> SortSelector { get => sortSelector; set => SetAndRaise(ref sortSelector, value); }
+    //    // When you click a column, we change this so DynamicData can know which property to sort by.
+    //    private Func<DataItem, IComparable> sortSelector = x=>x.KeyNumber;
+    //    public Func<DataItem, IComparable> SortSelector { get => sortSelector; set => SetAndRaise(ref sortSelector, value); }
 
-        // This is an observable that is similar to the above callback, just in observable form.  This tells us when and how to change filtering.
-        public IObservable<Func<DataItem, bool>> DynamicDescriptionFilter { get; private set; }
+    //    // This is an observable that is similar to the above callback, just in observable form.  This tells us when and how to change filtering.
+    //    public IObservable<Func<DataItem, bool>> DynamicDescriptionFilter { get; private set; }
 
-        public IObservable<SortExpressionComparer<DataItem>> DynamicSortExpression { get; private set; }
+    //    public IObservable<SortExpressionComparer<DataItem>> DynamicSortExpression { get; private set; }
 
-        public IObservable<bool> IsFiltered { get; private set; }
+    //    public IObservable<bool> IsFiltered { get; private set; }
 
-        public ObservableDataContainer()
-        {
-            // This creates the observable that outputs a new filtering function.  Basically, return true if the string contains x.
-            // Throttle is an operator that limits how often the observable is fired.  This is useful when you type so the filter 
-            // observable doesn't fire every time you hit a key.  This requires threading to work smoothly so doesn't work well
-            // in client-side blazor yet.
-            DynamicDescriptionFilter = this.WhenValueChanged(@this => @this.Filter)
-                //.Throttle(TimeSpan.FromMilliseconds(250))  //this freezes the ui in wasm since there are no threads
-                .Select<string, Func<DataItem, bool>>(f => item => item.Description.Contains(f));
+    //    public ObservableDataContainer()
+    //    {
+    //        // This creates the observable that outputs a new filtering function.  Basically, return true if the string contains x.
+    //        // Throttle is an operator that limits how often the observable is fired.  This is useful when you type so the filter 
+    //        // observable doesn't fire every time you hit a key.  This requires threading to work smoothly so doesn't work well
+    //        // in client-side blazor yet.
+    //        DynamicDescriptionFilter = this.WhenValueChanged(@this => @this.Filter)
+    //            //.Throttle(TimeSpan.FromMilliseconds(250))  //this freezes the ui in wasm since there are no threads
+    //            .Select<string, Func<DataItem, bool>>(f => item => item.Description.Contains(f));
 
-            // DynamicData requires a specific expression for sorting.  This is where the expression is created.  The SortSelector 
-            // property is combined with the IsDescending property.  When either of them is changed, the DynamicSortExpression 
-            // observable is fired with the newly created SortExpressionComparer.
-            DynamicSortExpression = this.WhenValueChanged(@this => @this.SortSelector).CombineLatest(this.WhenValueChanged(@this => @this.Descending), (selector, isDescending) =>
-            {
+    //        // DynamicData requires a specific expression for sorting.  This is where the expression is created.  The SortSelector 
+    //        // property is combined with the IsDescending property.  When either of them is changed, the DynamicSortExpression 
+    //        // observable is fired with the newly created SortExpressionComparer.
+    //        DynamicSortExpression = this.WhenValueChanged(@this => @this.SortSelector).CombineLatest(this.WhenValueChanged(@this => @this.Descending), (selector, isDescending) =>
+    //        {
 
-                if (isDescending)
-                {
-                    return SortExpressionComparer<DataItem>.Descending(selector);
-                }
-                else
-                {
-                    return SortExpressionComparer<DataItem>.Ascending(selector);
-                }
-            });
+    //            if (isDescending)
+    //            {
+    //                return SortExpressionComparer<DataItem>.Descending(selector);
+    //            }
+    //            else
+    //            {
+    //                return SortExpressionComparer<DataItem>.Ascending(selector);
+    //            }
+    //        });
 
-            // We create the IsFiltered observable here.  Basically, when the Filter property is changed, fire the IsFiltered observable.
-            IsFiltered = this.WhenValueChanged(@this => @this.Filter).Select(x => !string.IsNullOrWhiteSpace(x));
-        }
-    }
+    //        // We create the IsFiltered observable here.  Basically, when the Filter property is changed, fire the IsFiltered observable.
+    //        IsFiltered = this.WhenValueChanged(@this => @this.Filter).Select(x => !string.IsNullOrWhiteSpace(x));
+    //    }
+    //}
 
 
     protected override void OnInitialized()
@@ -116,10 +121,12 @@
            .ToList();
         selectedModeOption = selectionModeOptions.FirstOrDefault(x => x.Key == "Single");
 
+
+
         // We load the column data into the columnsSource SourceCache.
-        columnsSource.AddOrUpdate(new BFUDetailsRowColumn<DataItem,int>("Key", x => x.KeyNumber) { MaxWidth = 70, Index=0, OnColumnClick = this.OnColumnClick, IsResizable = true });
-        columnsSource.AddOrUpdate(new BFUDetailsRowColumn<DataItem, string>("Name", x => x.DisplayName) { Index = 1, MaxWidth = 150, OnColumnClick = this.OnColumnClick, IsResizable=true });
-        var descColumn = new BFUDetailsRowColumn<DataItem, string>("Description", x => x.Description) { Index = 2, OnColumnClick = this.OnColumnClick };
+        columnsSource.AddOrUpdate(new BFUDetailsRowColumn<DataItem,int>("Key", x => x.KeyNumber) { MaxWidth = 70, Index=0, IsResizable = true });
+        columnsSource.AddOrUpdate(new BFUDetailsRowColumn<DataItem, string>("Name", x => x.DisplayName) { Index = 1, MaxWidth = 150, IsResizable=true });
+        var descColumn = new BFUDetailsRowColumn<DataItem, string>("Description", x => x.Description) { Index = 2, FilterPredicate = prop => prop.Contains(filter) };
         columnsSource.AddOrUpdate(descColumn);
 
         // We're loading our sample data into the dataSource SourceCache.
@@ -132,18 +139,18 @@
         // We subscribe to the IsFiltered observable so that we know when to mark the description column with a Filter icon.  
         // All we have to do is change the column class and use the AddOrUpdate method on the SourceCache.  DynamicData will
         // automatically change the contents and notify anything that is watching that list.
-        dataContainer.IsFiltered.Subscribe(isFiltered =>
-        {
-            descColumn.IsFiltered = isFiltered;
-            columnsSource.AddOrUpdate(descColumn);
-        });
+        //dataContainer.IsFiltered.Subscribe(isFiltered =>
+        //{
+        //    descColumn.IsFiltered = isFiltered;
+        //    columnsSource.AddOrUpdate(descColumn);
+        //});
 
         // This is the meat of DynamicData.  We connect to the data SourceCache, apply the Filter (which is dynamic), 
         // apply the Sort expression (which is also dynamic), and Bind it to a readonly list property.  This is what we're
         // going to display in the DetailsList.  It will update automatically which any changes we make.  Since DynamicData is 
         // based on ReactiveExtensions, we have to Subscribe to it to make it "do stuff".
         dataSource.Connect()
-                .Filter(dataContainer.DynamicDescriptionFilter)
+                //.Filter(dataContainer.DynamicDescriptionFilter)
                 //.Sort(dataContainer.DynamicSortExpression)
                 .Bind(out ReadonlyList)
                 .Subscribe();

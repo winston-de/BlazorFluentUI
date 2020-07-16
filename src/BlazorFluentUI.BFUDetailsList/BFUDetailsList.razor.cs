@@ -8,7 +8,10 @@ using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Diagnostics;
 using System.Linq;
+using System.Reactive;
+using System.Reactive.Disposables;
 using System.Reactive.Linq;
+using System.Reactive.Subjects;
 using System.Reflection;
 using System.Runtime.CompilerServices;
 using System.Threading.Tasks;
@@ -38,8 +41,15 @@ namespace BlazorFluentUI
         [Parameter]
         public RenderFragment FooterTemplate { get; set; }
 
+        /// <summary>
+        /// GetKey must get a key that can be transformed into a unique string because the key will be written as HTML.  You can leave this null if your ItemsSource implements IList as the index will be used as a key.  
+        /// </summary>
         [Parameter]
         public Func<TItem,object> GetKey { get; set; }
+
+        [Parameter]
+        public IList<Func<TItem, object>> GroupBy { get; set; }
+
 
         [Parameter]
         public Func<TItem, string> GroupTitleSelector { get; set; }
@@ -83,9 +93,7 @@ namespace BlazorFluentUI
         [Parameter]
         public bool SelectionPreservedOnEmptyClick { get; set; }
 
-        [Parameter]
-        public Func<TItem, IEnumerable<TItem>> SubGroupSelector { get; set; }
-
+        
 
         //State
         int focusedItemIndex;
@@ -111,9 +119,17 @@ namespace BlazorFluentUI
 
         private SourceCache<TItem, object> sourceCache;
         private ReadOnlyObservableCollection<TItem> items;
+        private ReadOnlyObservableCollection<GroupedListItem2<TItem>> groupedUIItems;
 
-        private IObservable<Func<TItem, bool>> DynamicDescriptionFilter;
+        private IObservable<Func<TItem, bool>>? DynamicDescriptionFilter;
         private IEnumerable<TItem>? itemsSource;
+        private IDisposable? sourceCacheSubscription;
+        private Subject<Unit> applyFilter = new Subject<Unit>();
+
+        private Func<TItem, object> getKeyInternal;
+
+        private IList<Func<TItem, object>>? groupSortSelectors;
+        private IList<bool>? groupSortDescendingList;
 
         public event PropertyChangedEventHandler PropertyChanged;
         protected virtual void OnPropertyChanged([CallerMemberName] string propertyName = null)
@@ -127,83 +143,7 @@ namespace BlazorFluentUI
             
         }
 
-        private void CreateSourceCache()
-        {
-            //Setup SourceCache to pull from GetKey or from IList index
-            Func<TItem, object> getKey;
-            if (GetKey == null)
-            {
-                if (!(ItemsSource is IList<TItem>))
-                {
-                    throw new Exception("ItemsSource must either have GetKey set to point to a key value for each item OR ItemsSource must be an indexable list that implements IList.");
-                }
-                getKey = item => ItemsSource.IndexOf(item);
-
-            }
-            else
-                getKey = GetKey;
-            sourceCache = new SourceCache<TItem, object>(getKey);
-
-            //Setup observable for INotifyPropertyChanged
-            var propertyChanged = Observable.FromEvent<PropertyChangedEventHandler, PropertyChangedEventArgs>(
-              handler =>
-              {
-                  PropertyChangedEventHandler changed = (sender, e) => handler(e);
-                  return changed;
-              },
-              handler => this.PropertyChanged += handler,
-              handler => this.PropertyChanged -= handler);
-
-            //Setup sort expression observable, need to return an initial value in case Columns was already set.
-            var sortExpression = Observable.Return(new PropertyChangedEventArgs("Columns"))
-                .Merge(propertyChanged)
-                .Where(x => x.PropertyName == "Columns")
-                .SelectMany(prop =>
-                {
-                    // now watch for changes to the Columns object and return an initial value
-                    return this.Columns.Aggregate(Observable.Empty<PropertyChangedEventArgs>(), (x, y) => x.Merge(y.PropertyChangedObs))
-                    .Select(x =>
-                    {
-                        var sort = this.Columns.Where(x => x.IsSorted);
-
-                        SortExpressionComparer<TItem> sortChain;
-                        if (sort.Count() > 1)
-                        {
-                            var first = sort.Take(1).First();
-                            
-                            var rest = sort.Skip(1);
-                            sortChain = rest.Aggregate(first.IsSortedDescending ?
-                                SortExpressionComparer<TItem>.Descending(first.FieldSelector.ConvertToIComparable()) :
-                                SortExpressionComparer<TItem>.Ascending(first.FieldSelector.ConvertToIComparable()),
-                                (x, y) => y.IsSortedDescending ?
-                                x.ThenByAscending(y.FieldSelector.ConvertToIComparable()) :
-                                x.ThenByAscending(y.FieldSelector.ConvertToIComparable()));
-                        }
-                        else if (sort.Count() == 1)
-                        {
-                            var first = sort.Take(1).First();
-                            sortChain = first.IsSortedDescending ?
-                                SortExpressionComparer<TItem>.Descending(first.FieldSelector.ConvertToIComparable()) :
-                                SortExpressionComparer<TItem>.Ascending(first.FieldSelector.ConvertToIComparable());
-                        }
-                        else
-                        {
-                            sortChain = new SortExpressionComparer<TItem>();
-                        }
-
-                        return sortChain;
-                    });
-
-                });
-
-            // bind sourceCache to renderable list
-            sourceCache.Connect()
-                //.Filter()
-                .Sort(sortExpression)
-                .Bind(out items)
-                .Subscribe();
-        }
-
+        
         private void OnColumnClick(BFUDetailsRowColumn<TItem> column)
         {
             if (column.PropType.GetInterface("IComparable") != null)
@@ -242,7 +182,7 @@ namespace BlazorFluentUI
             if (!shouldRender)
             {
                 shouldRender = true;
-                return false;
+                //return false;
             }
             return true;
         }
@@ -314,12 +254,27 @@ namespace BlazorFluentUI
 
         protected override Task OnParametersSetAsync()
         {
-            if (SubGroupSelector == null && ItemsSource != null)
+            if (GroupBy == null && ItemsSource != null)
             {
                 selectionZone?.SetItemsSource(ItemsSource);
             }
 
-            
+            //Setup SourceCache to pull from GetKey or from IList index
+
+            if (GetKey == null)
+            {
+                if (!(itemsSource is IList<TItem>))
+                {
+                    throw new Exception("ItemsSource must either have GetKey set to point to a key value for each item OR ItemsSource must be an indexable list that implements IList.");
+                }
+                getKeyInternal = item => itemsSource.IndexOf(item);
+
+            }
+            else
+            {
+                getKeyInternal = GetKey;
+            }
+
             if (ItemsSource != itemsSource)
             {
                 itemsSource = ItemsSource;
@@ -327,15 +282,207 @@ namespace BlazorFluentUI
                 sourceCache.AddOrUpdate(itemsSource);
             }
 
-
             return base.OnParametersSetAsync();
         }
 
-        private void OnGroupedListGeneratedItems(GroupedListCollection<TItem> groupedListItems)
+        public void Filter()
         {
-            selectionZone?.SetGroupedItemsSource(groupedListItems.GroupedListItems);
-            //return Task.CompletedTask;
+            //reset filter icons
+            foreach (var col in Columns)
+                col.IsFiltered = false;
+            applyFilter.OnNext(Unit.Default);
         }
+
+        private void CreateSourceCache()
+        {
+            sourceCacheSubscription?.Dispose();
+            sourceCacheSubscription = null;
+
+            if (itemsSource == null)
+            {
+                return;
+            }
+
+            sourceCache = new SourceCache<TItem, object>(getKeyInternal);
+
+            //Setup observable for INotifyPropertyChanged
+            var propertyChanged = Observable.FromEvent<PropertyChangedEventHandler, PropertyChangedEventArgs>(
+              handler =>
+              {
+                  PropertyChangedEventHandler changed = (sender, e) => handler(e);
+                  return changed;
+              },
+              handler => this.PropertyChanged += handler,
+              handler => this.PropertyChanged -= handler);
+
+            //watch for changes to any properties and pick out changes to Columns, need to return an initial value in case Columns was already set.
+            var columnsObservable = Observable.Return(new PropertyChangedEventArgs("Columns"))
+                .Merge(propertyChanged)
+                .Where(x => x.PropertyName == "Columns")
+                .SelectMany(prop =>
+                {
+                    // now watch for changes to the Columns object properties and return an initial value so that any following logic can be setup 
+                    return this.Columns.Aggregate(Observable.Empty<PropertyChangedEventArgs>(), (x, y) => x.Merge(y.PropertyChangedObs));
+                });
+
+
+            //Setup filter expression observable
+            var filterExpression = Observable.Return(new PropertyChangedEventArgs("FilterPredicate")).Merge(columnsObservable).Do(x => Debug.WriteLine($"prop:{x.PropertyName} ")).Where(colProp => colProp.PropertyName == "FilterPredicate").Select(row =>
+              {
+                  var columnsWithFilters = this.Columns
+                    .Where(row => row.FilterPredicate != null).ToList();
+
+                  return (Func<TItem, bool>)(item =>
+                   {
+                       foreach (var col in columnsWithFilters)
+                       {
+                           if (!col.FilterPredicate(col.FieldSelector(item)))
+                           {
+                               col.IsFiltered = true;
+                               return false;
+                           }
+                       }
+                       return true;
+                   });
+
+              });
+
+            
+
+            var sortExpression = Observable.Return(new PropertyChangedEventArgs("IsSorted")).Merge(columnsObservable).Where(colProp => colProp.PropertyName == "IsSorted" || colProp.PropertyName == "IsSortedDescending").Select(x =>
+                {
+                    var sort = this.Columns.Where(x => x.IsSorted);
+
+                    SortExpressionComparer<TItem> sortChain;
+                    if (sort.Count() > 1)
+                    {
+                        var first = sort.Take(1).First();
+
+                        var rest = sort.Skip(1);
+                        sortChain = rest.Aggregate(first.IsSortedDescending ?
+                            SortExpressionComparer<TItem>.Descending(first.FieldSelector.ConvertToIComparable()) :
+                            SortExpressionComparer<TItem>.Ascending(first.FieldSelector.ConvertToIComparable()),
+                            (x, y) => y.IsSortedDescending ?
+                            x.ThenByDescending(y.FieldSelector.ConvertToIComparable()) :
+                            x.ThenByAscending(y.FieldSelector.ConvertToIComparable()));
+                    }
+                    else if (sort.Count() == 1)
+                    {
+                        var first = sort.Take(1).First();
+                        sortChain = first.IsSortedDescending ?
+                            SortExpressionComparer<TItem>.Descending(first.FieldSelector.ConvertToIComparable()) :
+                            SortExpressionComparer<TItem>.Ascending(first.FieldSelector.ConvertToIComparable());
+                    }
+                    else
+                    {
+                        sortChain = new SortExpressionComparer<TItem>();
+                    }
+
+                    return sortChain;
+                });
+
+            Observable.Return(new PropertyChangedEventArgs("IsSorted")).Merge(columnsObservable).Where(colProp => colProp.PropertyName == "IsSorted" || colProp.PropertyName == "IsSortedDescending").Select(x =>
+            {
+                var sort = this.Columns.Where(x => x.IsSorted);
+                if (sort.Count() > 0)
+                {
+                    return sort.Select(x=>x.FieldSelector).ToList();
+                }
+                else
+                {
+                    return null;
+                }
+            }).Subscribe(x =>
+            {
+                groupSortSelectors = x;
+            });
+
+            Observable.Return(new PropertyChangedEventArgs("IsSorted")).Merge(columnsObservable).Where(colProp => colProp.PropertyName == "IsSorted" || colProp.PropertyName == "IsSortedDescending").Select(x =>
+            {
+                var sort = this.Columns.Where(x => x.IsSorted);
+                if (sort.Count() > 0)
+                {
+                    return sort.Select(x => x.IsSortedDescending).ToList();
+                }
+                else
+                {
+                    return null;
+                }
+            }).Subscribe(x =>
+            {
+                groupSortDescendingList = x;
+            });
+
+            // bind sourceCache to renderable list
+            var preBindExpression = sourceCache.Connect()
+               .Filter(filterExpression, applyFilter)
+               .Sort(sortExpression);
+
+            //if (GroupBy != null)
+            //{
+            //    var firstGroupBy = GroupBy.First();
+
+            //    var groups = preBindExpression.Group(firstGroupBy);
+            //    var index = 0;
+            //    var depth = 0;
+
+            //    // using or and sorting groups later
+            //    var headerItems = groups.Transform(x =>
+            //    {                    
+            //        return new HeaderItem2<TItem>(default, null, depth, x.Key.ToString()) as GroupedListItem2<TItem>;
+            //    });
+
+            //    //assume only 1 grouping operation
+            //    var subItems = groups.MergeMany(group =>
+            //    {
+            //        return group.Cache.Connect().Transform(item => new PlainItem2<TItem>(item, group, depth + 1) as GroupedListItem2<TItem>);
+            //    });
+
+            //    var items = headerItems.Or(subItems);
+
+
+            //    //var uiItems = groups.TransformMany(x =>
+            //    //{
+            //    //    //assume only 1 grouping operation
+            //    //    var header = new HeaderItem2<TItem>(default, null, index++, depth, x.Key.ToString());
+            //    //    var subIndex = 0;
+            //    //    x.Cache.Connect()
+                        
+            //    //        .Transform(x => new PlainItem2<TItem>(x, header, subIndex++, depth + 1))
+            //    //        .Bind(out var subItems)
+            //    //        .Subscribe();
+
+            //    //    return Enumerable.Concat<GroupedListItem2<TItem>>(Enumerable.Repeat(header,1), subItems);
+
+            //    //    // Need to make this recursive, then change GroupedList to accept raw ui items with generic TItem
+            //    //    // Move this to the GroupedList instead.  Have DetailsList output plain sorted/filtered items but send the GroupBy parameter
+
+            //    //    //try to do FAKE grouping.  Sort by group selector, but don't change items.  
+
+            //    //}, x => x.Key);
+                
+
+            //        //.TransformMany(x=>x.Cache)
+            //        //.Transform(group=>new GroupContainer<TItem>(group, GroupBy.Skip(1).ToList()))
+            //        //uiItems
+            //        //.Bind(out groupedUIItems)
+            //        //.Do(x => StateHasChanged())
+            //        //.Subscribe();
+            //}
+            //else
+            {
+                sourceCacheSubscription = preBindExpression.Bind(out items)
+                    .Do(x => StateHasChanged())
+                    .Subscribe();
+            }
+        }
+
+
+        //private void OnGroupedListGeneratedItems(GroupedListCollection<TItem> groupedListItems)
+        //{
+        //    selectionZone?.SetGroupedItemsSource(groupedListItems.GroupedListItems);
+        //    //return Task.CompletedTask;
+        //}
 
         protected override Task OnAfterRenderAsync(bool firstRender)
         {
@@ -354,9 +501,9 @@ namespace BlazorFluentUI
 
         private bool ShouldAllBeSelected()
         {
-            if (SubGroupSelector == null)
+            if (GroupBy == null)
             {
-                return Selection.SelectedIndices.Count() == ItemsSource.Count() && ItemsSource.Any();
+                return Selection.SelectedIndices.Count() == items.Count() && items.Any();
                 //return Selection.SelectedItems.Count() == ItemsSource.Count() && ItemsSource.Any();
             }
             else
@@ -376,17 +523,17 @@ namespace BlazorFluentUI
 
         private void OnAllSelected()
         {
-            if (SubGroupSelector == null)
+            if (GroupBy == null)
             {
-                if (Selection.SelectedIndices.Count() != this.ItemsSource.Count())
+                if (Selection.SelectedKeys.Count() != this.items.Count())
                 {
                     //selectionZone.AddItems(ItemsSource);
-                    var list = new List<int>();
-                    for (var i=0; i< ItemsSource.Count(); i++)
+                    var list = new List<object>();
+                    for (var i=0; i< items.Count(); i++)
                     {
-                        list.Add(i);
+                        list.Add(getKeyInternal(items[i]));
                     }
-                    selectionZone.AddIndices(list);
+                    selectionZone.AddKeys(list);
                 }
                 else
                 {
@@ -415,7 +562,7 @@ namespace BlazorFluentUI
             _viewport = viewport;
             //Debug.WriteLine($"Viewport changed: {viewport.ScrollWidth}");
             if (_viewport != null)
-                AdjustColumns(ItemsSource, LayoutMode, SelectionMode, CheckboxVisibility, Columns, true);
+                AdjustColumns(items, LayoutMode, SelectionMode, CheckboxVisibility, Columns, true);
         }
 
         private void AdjustColumns(IEnumerable<TItem> newItems, DetailsListLayoutMode newLayoutMode, SelectionMode newSelectionMode, CheckboxVisibility newCheckboxVisibility, IEnumerable<BFUDetailsRowColumn<TItem>> newColumns, bool forceUpdate, int resizingColumnIndex = -1)
@@ -579,7 +726,7 @@ namespace BlazorFluentUI
             OnColumnResized.InvokeAsync(columnResizedArgs);
 
             _columnOverrides[columnResizedArgs.Column.Key] = columnResizedArgs.NewWidth;
-            AdjustColumns(ItemsSource, LayoutMode, SelectionMode, CheckboxVisibility, Columns, true, columnResizedArgs.ColumnIndex);
+            AdjustColumns(items, LayoutMode, SelectionMode, CheckboxVisibility, Columns, true, columnResizedArgs.ColumnIndex);
         }
 
         private void OnColumnAutoResized(ItemContainer<BFUDetailsRowColumn<TItem>> itemContainer)
