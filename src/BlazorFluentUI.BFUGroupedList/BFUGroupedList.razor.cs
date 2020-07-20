@@ -32,6 +32,8 @@ namespace BlazorFluentUI
         private const double ROW_HEIGHT = 42;
 
         private SourceCache<TItem, object> sourceCache;
+        private SourceList<TItem> sourceList;
+        private IDisposable sourceListSubscription;
 
         //private TItem _rootGroup;
         private IEnumerable<TItem> _itemsSource;
@@ -62,9 +64,9 @@ namespace BlazorFluentUI
 
         [Parameter]
         public IEnumerable<TItem>? ItemsSource { get; set; }
-               
-        //[Parameter]
-        //public TItem RootGroup { get; set; }
+
+        [Parameter]
+        public bool GroupSortDescending { get; set; }
 
         [Parameter]
         public RenderFragment<IndexedItem<GroupedListItem2<TItem>>>? ItemTemplate { get; set; }
@@ -104,10 +106,14 @@ namespace BlazorFluentUI
         private IList<bool>? _sortDescending;
         private IList<Func<TItem, object>>? _sortBy;
         private BehaviorSubject<SortExpressionComparer<TItem>> sortExpressionComparer = new BehaviorSubject<SortExpressionComparer<TItem>>(new SortExpressionComparer<TItem>());
-        private Subject<Unit> _resorter = new Subject<Unit>();
+        private bool _groupSortDescending;
+        private BehaviorSubject<SortExpressionComparer<GroupedListItem2<TItem>>> _groupSort = new BehaviorSubject<SortExpressionComparer<GroupedListItem2<TItem>>>(SortExpressionComparer<GroupedListItem2<TItem>>.Ascending(x=>x));
+        private Subject<Unit> resorter = new Subject<Unit>();
+
 
         protected override Task OnInitializedAsync()
         {
+            
             return base.OnInitializedAsync();
         }
 
@@ -254,33 +260,33 @@ namespace BlazorFluentUI
             }
         }
 
-        private System.Collections.Generic.ICollection<GroupedListItem<TItem>> GetChildrenRecursive(GroupedListItem<TItem> item)
-        {
-            var groupedItems = new System.Collections.Generic.List<GroupedListItem<TItem>>();
-            foreach (var child in item.Children)
-            {
-                groupedItems.Add(child);
-                var subItems = GetChildrenRecursive(child);
-                groupedItems.Add(subItems);
-            }
-            return groupedItems;
-        }
+        //private System.Collections.Generic.ICollection<GroupedListItem<TItem>> GetChildrenRecursive(GroupedListItem<TItem> item)
+        //{
+        //    var groupedItems = new System.Collections.Generic.List<GroupedListItem<TItem>>();
+        //    foreach (var child in item.Children)
+        //    {
+        //        groupedItems.Add(child);
+        //        var subItems = GetChildrenRecursive(child);
+        //        groupedItems.Add(subItems);
+        //    }
+        //    return groupedItems;
+        //}
 
-        private System.Collections.Generic.IEnumerable<GroupedListItem<TItem>> GetS(IEnumerable<TItem> items)
-        {
-            var groupedItems = new System.Collections.Generic.List<GroupedListItem<TItem>>();
-            foreach (var item in items)
-            {
-                var foundItem = dataItems.FirstOrDefault(x => x.Item.Equals(item));
-                if (foundItem != null)
-                    groupedItems.Add(foundItem);
+        //private System.Collections.Generic.IEnumerable<GroupedListItem<TItem>> GetS(IEnumerable<TItem> items)
+        //{
+        //    var groupedItems = new System.Collections.Generic.List<GroupedListItem<TItem>>();
+        //    foreach (var item in items)
+        //    {
+        //        var foundItem = dataItems.FirstOrDefault(x => x.Item.Equals(item));
+        //        if (foundItem != null)
+        //            groupedItems.Add(foundItem);
 
-                var moreItems = SubGroupSelector.Invoke(item);
-                if (moreItems != null)
-                    groupedItems.AddRange(GetS(moreItems));
-            }
-            return groupedItems;
-        }
+        //        var moreItems = SubGroupSelector.Invoke(item);
+        //        if (moreItems != null)
+        //            groupedItems.AddRange(GetS(moreItems));
+        //    }
+        //    return groupedItems;
+        //}
 
         public void ForceUpdate()
         {
@@ -318,37 +324,27 @@ namespace BlazorFluentUI
                             sortExpressionComparer.OnNext(SortExpressionComparer<TItem>.Descending(sortFunc.ConvertToIComparable()));
                         else
                             sortExpressionComparer.OnNext(SortExpressionComparer<TItem>.Ascending(sortFunc.ConvertToIComparable()));
-                        //if (SortDescending != null && SortDescending.ElementAt(index) != null && SortDescending.ElementAt(index) == true)
-                        //    sortExpressionComparer.OnNext(SortExpressionComparer<GroupedListItem2<TItem>>.Descending(x => 
-                        //    {
-                        //        if (x is HeaderItem2<TItem>)
-                        //        {
-                        //            return 0;
-                        //        }
-                        //        else
-                        //        {
-                        //            return sortFunc.ConvertToIComparable()(x.Item);
-                        //        }
-                        //    }));
-                        //else
-                        //    sortExpressionComparer.OnNext(SortExpressionComparer<GroupedListItem2<TItem>>.Ascending(x => 
-                        //    {
-                        //        if (x is HeaderItem2<TItem>)
-                        //        {
-                        //            return 0;
-                        //        }
-                        //        else
-                        //        {
-                        //            return sortFunc.ConvertToIComparable()(x.Item);
-                        //        }
-                        //    }));
+                        index++;
                     }
                 }
                 else
                 {
                     sortExpressionComparer.OnNext(new SortExpressionComparer<TItem>());
                 }
-                //_resorter.OnNext(Unit.Default);
+                //if (_groupSortDescending)
+                //    _groupSort.OnNext(SortExpressionComparer<GroupedListItem2<TItem>>.Descending(x => x));
+                //else
+                //    _groupSort.OnNext(SortExpressionComparer<GroupedListItem2<TItem>>.Ascending(x => x));
+            }
+
+            if (GroupSortDescending != _groupSortDescending)
+            {
+                _groupSortDescending = GroupSortDescending;
+                if (_groupSortDescending)
+                    _groupSort.OnNext(SortExpressionComparer<GroupedListItem2<TItem>>.Descending(x => x));
+                else 
+                    _groupSort.OnNext(SortExpressionComparer<GroupedListItem2<TItem>>.Ascending(x => x));
+
             }
 
             if (GroupBy != null)
@@ -357,7 +353,8 @@ namespace BlazorFluentUI
                 {
                     _itemsSource = ItemsSource;
                     CreateSourceCache();
-                    sourceCache.AddOrUpdate(_itemsSource);
+                    //sourceCache.AddOrUpdate(_itemsSource);
+                    sourceList.AddRange(_itemsSource);
                 }
             }
             else if (SubGroupSelector != null)
@@ -443,57 +440,33 @@ namespace BlazorFluentUI
             sourceCacheSubscription?.Dispose();
             sourceCacheSubscription = null;
 
+            sourceListSubscription?.Dispose();
+            sourceListSubscription = null;
+
             if (_itemsSource == null)
             {
                 return;
             }
             
-            sourceCache = new SourceCache<TItem, object>(getKeyInternal);
+            //sourceCache = new SourceCache<TItem, object>(getKeyInternal);
 
-            var expression = sourceCache.Connect().ChangeKey(x => new AggregationKey(AggregationType.Item, getKeyInternal));
+            //var expression = sourceCache.Connect();
 
+            //var items = expression.FlatGroup<TItem, object>(GroupBy, 0, new List<object>(), SortBy, SortDescending)
+            //    .Batch(TimeSpan.FromSeconds(0.2))
+            //    .Sort(SortExpressionComparer<GroupedListItem2<TItem>>.Ascending(x=>x));
+                        
+            //sourceCacheSubscription = items.Bind(out groupedUIListItems)
+            //    .Do(_ => InvokeAsync(StateHasChanged))
+            //    .Do(_ => Debug.WriteLine($"There are {groupedUIListItems.Count} items to render."))
+            //    .Subscribe();
 
-            ////grouping
-            //var firstGroupBy = GroupBy.First();
-
-            //var groups = expression.Group(firstGroupBy);
-
-            //var depth = 0;
-
-            //// using or and sorting groups later
-            //var headerItems = groups.Transform(x =>
-            //{
-            //    return new HeaderItem2<TItem>(default, null, depth, x.Key.ToString()) as GroupedListItem2<TItem>;
-            //});
-
-            ////assume only 1 grouping operation
-            //var subItems = groups.MergeMany(group =>
-            //{
-            //    return group.Cache.Connect()
-            //        .Sort(sortExpressionComparer)
-            //        .Transform(item => new PlainItem2<TItem>(item, group, depth + 1) as GroupedListItem2<TItem>);
-            //});
-
-            //var items = headerItems.Or(subItems);
-
-
-            var items = expression.FlatGroup(GroupBy, 0, new List<object>()).Sort(SortExpressionComparer<GroupedListItem2<TItem>>.Ascending(x=>x));
-
-            //if (SortBy != null)
-            //{
-            //    var index = 0;
-            //    foreach (var sortFunc in SortBy)
-            //    {
-            //        if (SortDescending != null && SortDescending.ElementAt(index) != null && SortDescending.ElementAt(index) == true)
-            //            items = items.Sort(SortExpressionComparer<GroupedListItem2<TItem>>.Descending(x=> sortFunc.ConvertToIComparable()(x.Item)));
-            //        else
-            //            items = items.Sort(SortExpressionComparer<GroupedListItem2<TItem>>.Ascending(x => sortFunc.ConvertToIComparable()(x.Item)));
-            //    }
-            //}
-
-           
-
-            sourceCacheSubscription = items.Bind(out groupedUIListItems)
+            sourceList = new SourceList<TItem>();
+            sourceListSubscription = sourceList.Connect()
+                .FlatGroup<TItem>(GroupBy, 0, new List<object>(), sortExpressionComparer)
+                .AutoRefreshOnObservable(x=> sortExpressionComparer)
+                .Sort(_groupSort)
+                .Bind(out groupedUIListItems)
                 .Do(_ => InvokeAsync(StateHasChanged))
                 //.Do(_ => Debug.WriteLine($"There are {groupedUIListItems.Count} items to render."))
                 .Subscribe();

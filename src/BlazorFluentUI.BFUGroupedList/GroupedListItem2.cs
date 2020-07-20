@@ -46,11 +46,11 @@ namespace BlazorFluentUI
         //    return key;
         //}
 
-        public List<object> ParentHierarchy { get; set; } = new List<object>();
+        //public List<object> ParentHierarchy { get; set; } = new List<object>();
 
-        public List<object> ParentGroupKeys { get; set; }
+        public IList<object> ParentGroupKeys { get; set; }
 
-        public GroupedListItem2(TItem item, List<object> parentGroupKeys, int depth) 
+        public GroupedListItem2(TItem item, IList<object> parentGroupKeys, int depth) 
         {
             _isVisibleSubject = new BehaviorSubject<bool>(true);
 
@@ -119,22 +119,18 @@ namespace BlazorFluentUI
             if (obj is GroupedListItem2<TItem> )
             {
                 var b = (GroupedListItem2<TItem>)obj;
-                //if (a.Depth == 0 && b.Depth == 0) //both root groups
-                //{
-                //    return a.Name.CompareTo(b.Name);
-                //}
-                //else 
+
                 if (this.ParentGroupKeys.Count > b.ParentGroupKeys.Count)
                 {
                     //if (b.ParentGroupKeys.Count == 0)
                     //    return this.ParentGroupKeys[0].ToString().CompareTo(b.Name);
                     var result = this.ParentGroupKeys[b.ParentGroupKeys.Count - 1].ToString().CompareTo(b.ParentGroupKeys[b.ParentGroupKeys.Count - 1].ToString());
-                    if (this is HeaderItem2<TItem> && b is PlainItem2<TItem>)
-                        Debug.WriteLine($"header {string.Join(',', this.ParentGroupKeys.Select(x => x.ToString()))} was {(result > 0 ? "after" : result < 0 ? "before" : "equal to")} item {string.Join(',', b.ParentGroupKeys.Select(x => x.ToString()))}");
-                    else if (this is PlainItem2<TItem> && b is HeaderItem2<TItem>)
-                        Debug.WriteLine($"item {string.Join(',', this.ParentGroupKeys.Select(x => x.ToString()))} was {(result > 0 ? "after" : result < 0 ? "before" : "equal to")} header {string.Join(',', b.ParentGroupKeys.Select(x => x.ToString()))}");
-                    else if (this is HeaderItem2<TItem> && b is HeaderItem2<TItem>)
-                        Debug.WriteLine($"header {string.Join(',', this.ParentGroupKeys.Select(x => x.ToString()))} was {(result > 0 ? "after" : result < 0 ? "before" : "equal to")} header {string.Join(',', b.ParentGroupKeys.Select(x => x.ToString()))}");
+                    //if (this is HeaderItem2<TItem> && b is PlainItem2<TItem>)
+                    //    Debug.WriteLine($"header {string.Join(',', this.ParentGroupKeys.Select(x => x.ToString()))} was {(result > 0 ? "after" : result < 0 ? "before" : "equal to")} item {string.Join(',', b.ParentGroupKeys.Select(x => x.ToString()))}");
+                    //else if (this is PlainItem2<TItem> && b is HeaderItem2<TItem>)
+                    //    Debug.WriteLine($"item {string.Join(',', this.ParentGroupKeys.Select(x => x.ToString()))} was {(result > 0 ? "after" : result < 0 ? "before" : "equal to")} header {string.Join(',', b.ParentGroupKeys.Select(x => x.ToString()))}");
+                    //else if (this is HeaderItem2<TItem> && b is HeaderItem2<TItem>)
+                    //    Debug.WriteLine($"header {string.Join(',', this.ParentGroupKeys.Select(x => x.ToString()))} was {(result > 0 ? "after" : result < 0 ? "before" : "equal to")} header {string.Join(',', b.ParentGroupKeys.Select(x => x.ToString()))}");
                     if (result == 0)
                         return 1;
                     else
@@ -145,12 +141,12 @@ namespace BlazorFluentUI
                     //if (this.ParentGroupKeys.Count == 0)
                     //    return this.Name.CompareTo(b.ParentGroupKeys[0]);
                     var result = this.ParentGroupKeys[this.ParentGroupKeys.Count - 1].ToString().CompareTo(b.ParentGroupKeys[this.ParentGroupKeys.Count - 1].ToString());
-                    if (this is HeaderItem2<TItem> && b is PlainItem2<TItem>)
-                        Debug.WriteLine($"header {string.Join(',', this.ParentGroupKeys.Select(x => x.ToString()))} was {(result > 0 ? "after" : result < 0 ? "before" : "equal to")} item {string.Join(',', b.ParentGroupKeys.Select(x => x.ToString()))}");
-                    else if (this is PlainItem2<TItem> && b is HeaderItem2<TItem>)
-                        Debug.WriteLine($"item {string.Join(',', this.ParentGroupKeys.Select(x => x.ToString()))} was {(result > 0 ? "after" : result < 0 ? "before" : "equal to")} header {string.Join(',', b.ParentGroupKeys.Select(x => x.ToString()))}");
-                    else if (this is HeaderItem2<TItem> && b is HeaderItem2<TItem>)
-                        Debug.WriteLine($"header {string.Join(',', this.ParentGroupKeys.Select(x => x.ToString()))} was {(result > 0 ? "after" : result < 0 ? "before" : "equal to")} header {string.Join(',', b.ParentGroupKeys.Select(x => x.ToString()))}");
+                    //if (this is HeaderItem2<TItem> && b is PlainItem2<TItem>)
+                    //    Debug.WriteLine($"header {string.Join(',', this.ParentGroupKeys.Select(x => x.ToString()))} was {(result > 0 ? "after" : result < 0 ? "before" : "equal to")} item {string.Join(',', b.ParentGroupKeys.Select(x => x.ToString()))}");
+                    //else if (this is PlainItem2<TItem> && b is HeaderItem2<TItem>)
+                    //    Debug.WriteLine($"item {string.Join(',', this.ParentGroupKeys.Select(x => x.ToString()))} was {(result > 0 ? "after" : result < 0 ? "before" : "equal to")} header {string.Join(',', b.ParentGroupKeys.Select(x => x.ToString()))}");
+                    //else if (this is HeaderItem2<TItem> && b is HeaderItem2<TItem>)
+                    //    Debug.WriteLine($"header {string.Join(',', this.ParentGroupKeys.Select(x => x.ToString()))} was {(result > 0 ? "after" : result < 0 ? "before" : "equal to")} header {string.Join(',', b.ParentGroupKeys.Select(x => x.ToString()))}");
                     if (result == 0)
                         return -1;
                     else
@@ -172,7 +168,21 @@ namespace BlazorFluentUI
                         }
                     }
                     // if here, then groups all matched.
-                    return 0;
+                    if (this is HeaderItem2<TItem> && b is PlainItem2<TItem>)
+                        return -1;
+                    else if (this is PlainItem2<TItem> && b is HeaderItem2<TItem>)
+                        return 1;
+                    else if (this is PlainItem2<TItem> && b is PlainItem2<TItem>)
+                    {
+                        var c = (PlainItem2<TItem>)this;
+                        var d = (PlainItem2<TItem>)b;
+
+                        return -(c.Index.CompareTo(d.Index));
+                    }
+                    else
+                    {
+                        return 0;
+                    }
                 }
             }
             else
@@ -195,7 +205,7 @@ namespace BlazorFluentUI
         public IObservable<bool> IsOpenObservable => isOpenSubject.AsObservable();
 
 
-        public HeaderItem2(TItem item, List<object> parentGroupKeys, int depth, string name)
+        public HeaderItem2(TItem item, IList<object> parentGroupKeys, int depth, string name)
             : base(item, parentGroupKeys, depth)
         {
             isOpenSubject = new BehaviorSubject<bool>(true);
@@ -206,10 +216,17 @@ namespace BlazorFluentUI
 
     public class PlainItem2<TItem> : GroupedListItem2<TItem>
     {
-        public PlainItem2(TItem item, List<object> parentGroupKeys, int depth)
+        //public IList<Func<TItem, object>> SortBy { get; set; }
+        //public IList<bool> SortByDescending { get; set; }
+
+        public int Index { get; set; }
+
+        public PlainItem2(TItem item, IList<object> parentGroupKeys, int depth, int index)
             : base(item, parentGroupKeys, depth)
         {
-
+            Index = index;
+            //SortBy = sortBy;
+            //SortByDescending = sortByDescending;
         }
     }
 }
