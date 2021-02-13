@@ -28,12 +28,12 @@
 
 <Demo Header="Command Bar Button" Key="2" MetadataPath="ButtonsPage">
     <BFUStack Horizontal="true" Style=@("height:44px")>
-        <BFUCommandBarButton IconName="Add"
+        <BFUCommandBarButton IconName="icon-ic_fluent_apps_add_in_24_regular"
                              Text="New item"
                              MenuItems="MenuProperties"
                              Disabled="@Disabled.GetValueOrDefault()"
                              Checked="Checked" />
-        <BFUCommandBarButton IconName="Mail" Text="Send mail" Disabled="@Disabled.GetValueOrDefault()" Checked="Checked" />
+        <BFUCommandBarButton IconName="icon-ic_fluent_mail_24_regular" Text="Send mail" Disabled="@Disabled.GetValueOrDefault()" Checked="Checked" />
     </BFUStack>
 </Demo>
 
@@ -70,18 +70,18 @@
 <Demo Header="Icon Button" Key="4" MetadataPath="ButtonsPage">
     <BFUStack Horizontal="true" Tokens=@(new BFUStackTokens() { ChildrenGap = new[] { 8.0 } })>
         <BFUIconButton OnClick=@(() => OnClickHandler("Icon")) IconName="Emoji2" AriaLabel="Emoji" Disabled=@Disabled.GetValueOrDefault() Checked=Checked />
-        <BFUIconButton MenuItems="MenuProperties" IconName="Emoji2" AriaLabel="Emoji" Disabled=@Disabled.GetValueOrDefault() Checked=Checked />
+        <BFUIconButton MenuItems="MenuProperties" IconName="icon-ic_fluent_emoji_24_regular" AriaLabel="Emoji" Disabled=@Disabled.GetValueOrDefault() Checked=Checked />
     </BFUStack>
 </Demo>
 
 <Demo Header="Action Button" Key="5" MetadataPath="ButtonsPage">
-    <BFUActionButton IconName="AddFriend" Disabled=@Disabled.GetValueOrDefault() Checked=Checked OnClick=@(() => OnClickHandler("Action"))>
+    <BFUActionButton IconName="icon-ic_fluent_apps_add_in_20_regular" Disabled=@Disabled.GetValueOrDefault() Checked=Checked OnClick=@(() => OnClickHandler("Action"))>
         Create account
     </BFUActionButton>
 </Demo>
 
 <Demo Header="Command Button" Key="6" MetadataPath="ButtonsPage">
-    <BFUCommandButton IconName="Add" Text="New item" MenuItems="MenuProperties" Disabled=@Disabled.GetValueOrDefault() Checked=Checked />
+    <BFUCommandButton IconName="icon-ic_fluent_apps_add_in_20_regular" Text="New item" MenuItems="MenuProperties" Disabled=@Disabled.GetValueOrDefault() Checked=Checked />
 </Demo>
 
 <Demo Header="Button-like Anchor" Key="7" MetadataPath="ButtonsPage">
@@ -149,8 +149,8 @@
     {
         MenuProperties = new System.Collections.Generic.List<BFUContextualMenuItem>()
 {
-            new BFUContextualMenuItem() { Key = "emailMessage", Text = "Email message", IconName="Mail"},
-            new BFUContextualMenuItem() { Key = "calendarEvent", Text = "Calendar event", IconName="Calendar"}
+            new BFUContextualMenuItem() { Key = "emailMessage", Text = "Email message", IconName = "icon-ic_fluent_mail_24_regular"},
+            new BFUContextualMenuItem() { Key = "calendarEvent", Text = "Calendar event", IconName = "icon-ic_fluent_calendar_ltr_24_regular"}
         };
         buttonCommand = new Utils.RelayCommand((p) =>
         {

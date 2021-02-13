@@ -6,20 +6,20 @@
 <h4>OverflowSet Horizontal Example</h4>
 <BFUOverflowSet Items=@items OverflowItems=@items GetKey=@(x=> x.Key)>
     <ItemTemplate>
-        <BFUCommandBarButton IconName="Add" Text=@context.Name />
+        <BFUCommandBarButton IconName="icon-ic_fluent_apps_add_in_20_regular" Text=@context.Name />
     </ItemTemplate>
     <OverflowTemplate>
-        <BFUCommandBarButton HideChevron="true" Style="min-width: 0; padding: 0 4px; align-self: stretch;" IconName="More" MenuItems=@(itemTransform(context)) />
+        <BFUCommandBarButton HideChevron="true" Style="min-width: 0; padding: 0 4px; align-self: stretch;" IconName="icon-ic_fluent_more_24_regular" MenuItems=@(itemTransform(context)) />
     </OverflowTemplate>
 </BFUOverflowSet>
 
 <h4>OverflowSet Vertical Example</h4>
 <BFUOverflowSet Items=@smallerItems OverflowItems=@smallerItems Vertical="true" GetKey=@(x=> x.Key)>
     <ItemTemplate>
-        <BFUCommandBarButton IconName="Add" Text=@context.Name />
+        <BFUCommandBarButton IconName="icon-ic_fluent_apps_add_in_20_regular" Text=@context.Name />
     </ItemTemplate>
     <OverflowTemplate>
-        <BFUCommandBarButton HideChevron="true" Style="min-width: 0; padding: 10px; font-size:16px;" IconName="More" MenuItems=@(itemTransform(context)) />
+        <BFUCommandBarButton HideChevron="true" Style="min-width: 0; padding: 10px; font-size:16px;" IconName="icon-ic_fluent_more_24_regular" MenuItems=@(itemTransform(context)) />
     </OverflowTemplate>
 </BFUOverflowSet>
 

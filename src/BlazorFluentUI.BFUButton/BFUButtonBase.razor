@@ -91,7 +91,7 @@
             @BFUKeytipDataRenderFragment
             @if (Primary)
             {
-                <BFUPrimaryButton IconName="ChevronDown"
+                <BFUPrimaryButton IconName="icon-ic_fluent_chevron_down_24_regular"
                                   ClassName=@($"ms-Button-menuIcon{(Disabled || commandDisabled ? " is-disabled" : "")} {(isChecked ? " is-checked" : "")}{(contextMenuShown ? " is-expanded" : "")}")
                                   OnClick=@MenuClickHandler
                                   Disabled=@Disabled />
@@ -99,7 +99,7 @@
             }
             else
             {
-                <BFUDefaultButton IconName="ChevronDown"
+                <BFUDefaultButton IconName="icon-ic_fluent_chevron_down_24_regular"
                                   ClassName=@($"ms-Button-menuIcon{(Disabled || commandDisabled ? " is-disabled" : "")} {(isChecked ? " is-checked" : "")}{(contextMenuShown ? " is-expanded" : "")}")
                                   OnClick=@MenuClickHandler
                                   Disabled=@Disabled />

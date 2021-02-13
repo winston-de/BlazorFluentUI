@@ -8,14 +8,13 @@
          @ref="RootElementReference"
          role="presentation"
          @attributes=@ExtraParameters>
-
     </div>
 }
 else
 {
     @if (IconSrc == null )
     {
-        <i class=@($"ms-Icon {(string.IsNullOrEmpty(this.IconName) ? "ms-Icon-placeHolder" : "ms-Icon--" + this.IconName)} {this.ClassName}")
+        <i class=@($" ms-Icon {(string.IsNullOrEmpty(this.IconName) ? "ms-Icon-placeHolder" : this.IconName)} {(string.IsNullOrEmpty(this.IconName) ? "ms-Icon-placeHolder" : "ms-Icon--" + this.IconName)} {this.ClassName}")
            data-icon-name=@IconName
            role="presentation"
            style="@Style"
@@ -33,8 +32,6 @@ else
         {
             <img src=@IconSrc class=@ClassName style="height:20px">
         }
-
-
     }
 }
 

@@ -5,17 +5,20 @@
 <div class=@($"mediumFont ms-Check{(Checked ? " is-checked" : "")}")>
     @if (UseFastIcons)
     {
-        <BFUFontIcon IconName="CircleRing"
-                ClassName="ms-Check-circle" />
-        <BFUFontIcon IconName="StatusCircleCheckmark"
-                ClassName="ms-Check-check" />
+            @if(Checked) {
+                <BFUFontIcon IconName="icon-ic_fluent_checkmark_circle_24_regular"/>
+            } else {
+                <BFUFontIcon IconName="icon-ic_fluent_circle_24_regular"/>
+            }
     }
     else
     {
-        <BFUIcon IconName="CircleRing"
-                ClassName="ms-Check-circle" />
-        <BFUIcon IconName="StatusCircleCheckmark"
-                ClassName="ms-Check-check" />
+        @if(Checked) {
+                <BFUFontIcon IconName="icon-ic_fluent_checkmark_circle_24_regular"/>
+        } else {
+        <BFUFontIcon IconName="icon-ic_fluent_circle_24_regular"/>
+        }
+
     }
 </div>
 </div>

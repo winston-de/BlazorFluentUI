@@ -9,10 +9,10 @@
     <DataTemplate Context="data">
         <BFUOverflowSet Items=@data.Items OverflowItems=@data.OverflowItems GetKey=@(x=> x.Key)>
             <ItemTemplate>
-                <BFUCommandBarButton IconName="Add" Text=@context.Name />
+                <BFUCommandBarButton IconName="icon-ic_fluent_apps_add_in_20_regular" Text=@context.Name />
             </ItemTemplate>
             <OverflowTemplate>
-                <BFUCommandBarButton HideChevron="true" Style="min-width: 0; padding: 0 4px; align-self: stretch;" IconName="More" MenuItems=@(itemTransform(context)) />
+                <BFUCommandBarButton HideChevron="true" Style="min-width: 0; padding: 0 4px; align-self: stretch;" IconName="icon-ic_fluent_more_24_regular" MenuItems=@(itemTransform(context)) />
             </OverflowTemplate>
             @*<OverflowItemTemplate>
                 <ContextualMenuItem Text=@context.Name Key=@context.Key />
@@ -49,7 +49,7 @@
 
     @*Func<(IEnumerable<OverflowItem> primary, IEnumerable<OverflowItem> overflow, string cacheKey), RenderFragment> onRenderData = data =>@<BFUOverflowSet Items=@data.primary OverflowItems=@data.overflow>
     <ItemTemplate>
-        <BFUCommandBarButton IconName="Add" Text=@context.Name />
+        <BFUCommandBarButton IconName="icon-ic_fluent_apps_add_in_20_regular" Text=@context.Name />
     </ItemTemplate>
     <OverflowItemTemplate>
         <ContextualMenuItem Text=@context.Name Key=@context.Key />

@@ -114,13 +114,13 @@ namespace BlazorFluentUI
             };
 
             items = new System.Collections.Generic.List<BFUCommandBarItem> {
-                new BFUCommandBarItem() { Text= "Bold", CanCheck=true, IconOnly=true, IconName="Bold", Key="Bold", Command=buttonCommand, CommandParameter="Bold"},
-                new BFUCommandBarItem() { Text= "Italic", CanCheck=true, IconOnly=true, IconName="Italic", Key="Italic", Command=buttonCommand, CommandParameter="Italic"},
-                new BFUCommandBarItem() { Text= "Underline", CanCheck=true, IconOnly=true, IconName="Underline", Key="Underline", Command=buttonCommand, CommandParameter="Underline"},
-                new BFUCommandBarItem() { Text= "Superscript", CanCheck=true, IconOnly=true, IconName="Superscript", Key="Superscript", Command=buttonCommand, CommandParameter="Superscript"},
-                new BFUCommandBarItem() { Text= "Subscript", CanCheck=true, IconOnly=true, IconName="Subscript", Key="Subscript", Command=buttonCommand, CommandParameter="Subscript"},
+                new BFUCommandBarItem() { Text= "Bold", CanCheck=true, IconOnly=true, IconName="icon-ic_fluent_text_bold_24_regular", Key="Bold", Command=buttonCommand, CommandParameter="Bold"},
+                new BFUCommandBarItem() { Text= "Italic", CanCheck=true, IconOnly=true, IconName="icon-ic_fluent_text_italic_24_regular", Key="Italic", Command=buttonCommand, CommandParameter="Italic"},
+                new BFUCommandBarItem() { Text= "Underline", CanCheck=true, IconOnly=true, IconName="icon-ic_fluent_text_underline_24_regular", Key="Underline", Command=buttonCommand, CommandParameter="Underline"},
+                new BFUCommandBarItem() { Text= "Superscript", CanCheck=true, IconOnly=true, IconName="icon-ic_fluent_text_superscript_24_regular", Key="Superscript", Command=buttonCommand, CommandParameter="Superscript"},
+                new BFUCommandBarItem() { Text= "Subscript", CanCheck=true, IconOnly=true, IconName="icon-ic_fluent_text_superscript_24_regular", Key="Subscript", Command=buttonCommand, CommandParameter="Subscript"},
 
-                new BFUCommandBarItem() { Text= "Insert Image", CanCheck=false, IconOnly=true, IconName="ImagePixel", Key="Image", Command=buttonCommand, CommandParameter="Image"}
+                new BFUCommandBarItem() { Text= "Insert Image", CanCheck=false, IconOnly=true, IconName="icon-ic_fluent_image_24_regular", Key="Image", Command=buttonCommand, CommandParameter="Image"}
             };
         }
 

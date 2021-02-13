@@ -111,7 +111,7 @@
         var clipBoardGroup = new GroupItem();
         clipBoardGroup.ItemsSource.Add(new BFUButtonViewModel() { Text = "Cut", IconName = "Cut" });
         clipBoardGroup.ItemsSource.Add(new BFUButtonViewModel() { Text = "Copy", IconName = "Copy" });
-        clipBoardGroup.ItemsSource.Add(new BFUButtonViewModel() { Text = "Paste", IconName = "Paste",Priority=10 });
+        clipBoardGroup.ItemsSource.Add(new BFUButtonViewModel() { Text = "Paste", IconName = "ClipboardPaste",Priority=10 });
 
 
 
@@ -158,9 +158,9 @@
 
         backstageItems = new List<BFUNavBarItem> {
             new BFUNavBarItem() {NavMatchType= NavMatchType.AnchorOnly,IconName="Back",Key="1", Command=BackCommand},
-            new BFUNavBarItem() {Text= "First",IconName="Add",Key="2"},
-            new BFUNavBarItem() {Text= "Second", IconName="Remove", Key="3"},
-            new BFUNavBarItem() {Text= "Third", IconName="Save", Key="4"}
+            new BFUNavBarItem() {Text= "First",IconName="icon-ic_fluent_apps_add_in_20_regular",Key="2"},
+            new BFUNavBarItem() {Text= "Second", IconName="icon-ic_fluent_delete_24_regular", Key="3"},
+            new BFUNavBarItem() {Text= "Third", IconName="icon-ic_fluent_save_edit_24_regular", Key="4"}
         };
 
         #endregion
